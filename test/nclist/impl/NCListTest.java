@@ -14,11 +14,8 @@ import java.util.Random;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import features.api.SequenceFeatureI;
-import features.impl.SequenceFeature;
 import junit.extensions.PA;
 import nclist.api.ContiguousI;
-import nclist.impl.NCList;
 
 public class NCListTest
 {
@@ -184,8 +181,8 @@ public class NCListTest
   @Test(groups = "Functional", dataProvider = "scalesOfLife")
   public void test_pseudoRandom(Integer scale)
   {
-    NCListI<SequenceFeatureI> ncl = new NCList<>();
-    List<SequenceFeatureI> features = new ArrayList<SequenceFeatureI>(
+    NCListI<SimpleFeature> ncl = new NCList<>();
+    List<SimpleFeature> features = new ArrayList<SimpleFeature>(
             scale);
 
     testAdd_pseudoRandom(scale, ncl, features);
@@ -208,8 +205,8 @@ public class NCListTest
    * @param ncl
    * @param features
    */
-  protected void testDelete_pseudoRandom(NCListI<SequenceFeatureI> ncl,
-          List<SequenceFeatureI> features)
+  protected void testDelete_pseudoRandom(NCListI<SimpleFeature> ncl,
+          List<SimpleFeature> features)
   {
     int deleted = 0;
 
@@ -217,7 +214,7 @@ public class NCListTest
     {
       assertEquals(ncl.size(), features.size());
       int toDelete = random.nextInt(features.size());
-      SequenceFeatureI entry = features.get(toDelete);
+      SimpleFeature entry = features.get(toDelete);
       assertTrue(ncl.contains(entry),
               String.format("NCList doesn't contain entry [%d] '%s'!",
                       deleted, entry.toString()));
@@ -239,7 +236,7 @@ public class NCListTest
        */
       for (int i = 0; i < features.size(); i++)
       {
-        SequenceFeatureI sf = features.get(i);
+        SimpleFeature sf = features.get(i);
         assertTrue(ncl.contains(sf), String.format(
                 "NCList doesn't contain entry [%d] %s after deleting '%s'!",
                 i, sf.toString(), entry.toString()));
@@ -258,7 +255,7 @@ public class NCListTest
    * @param features
    */
   protected void testAdd_pseudoRandom(Integer scale,
-          NCListI<SequenceFeatureI> ncl, List<SequenceFeatureI> features)
+          NCListI<SimpleFeature> ncl, List<SimpleFeature> features)
   {
     int count = 0;
     final int size = 50;
@@ -271,12 +268,11 @@ public class NCListTest
       int to = Math.max(r1, r2);
 
       /*
-       * choice of two feature values means that occasionally an identical
+       * choice of two feature types means that occasionally an identical
        * feature may be generated, in which case it should not be added 
        */
-      float value = (float) i % 2;
-      SequenceFeatureI feature = new SequenceFeature("Pfam", "", from, to,
-              value, "group");
+      String desc = i % 2 == 0 ? "Pfam" : "Cath";
+      SimpleFeature feature = new SimpleFeature(from, to, desc);
 
       /*
        * add to NCList - with duplicate entries (by equals) disallowed
@@ -314,8 +310,8 @@ public class NCListTest
    * @param features
    *          a list of the ranges stored in ncl
    */
-  protected void testFindOverlaps_pseudoRandom(NCListI<SequenceFeatureI> ncl,
-          int scale, List<SequenceFeatureI> features)
+  protected void testFindOverlaps_pseudoRandom(NCListI<SimpleFeature> ncl,
+          int scale, List<SimpleFeature> features)
   {
     int halfScale = scale / 2;
     int minIterations = 20;
@@ -383,10 +379,10 @@ public class NCListTest
    * @param to
    * @param features
    */
-  protected void verifyFindOverlaps(NCListI<SequenceFeatureI> ncl, int from,
-          int to, List<SequenceFeatureI> features)
+  protected void verifyFindOverlaps(NCListI<SimpleFeature> ncl, int from,
+          int to, List<SimpleFeature> features)
   {
-    List<SequenceFeatureI> overlaps = ncl.findOverlaps(from, to);
+    List<SimpleFeature> overlaps = ncl.findOverlaps(from, to);
 
     /*
      * check returned entries do indeed overlap from-to range
@@ -472,11 +468,9 @@ public class NCListTest
     /*
      * tests where object.equals() == true
      */
-    NCList<SequenceFeatureI> features = new NCList<>();
-    SequenceFeatureI sf1 = new SequenceFeature("type", "desc", 1, 10, 2f,
-            "group");
-    SequenceFeatureI sf2 = new SequenceFeature("type", "desc", 1, 10, 2f,
-            "group");
+    NCList<SimpleFeature> features = new NCList<>();
+    SimpleFeature sf1 = new SimpleFeature(1, 10, "type");
+    SimpleFeature sf2 = new SimpleFeature(1, 10, "type");
     features.add(sf1);
     assertEquals(sf1, sf2); // sf1.equals(sf2)
     assertFalse(features.delete(sf2)); // equality is not enough for deletion
@@ -537,13 +531,10 @@ public class NCListTest
   @Test(groups = "Functional")
   public void testContains()
   {
-    NCList<SequenceFeatureI> ncl = new NCList<>();
-    SequenceFeatureI sf1 = new SequenceFeature("type", "desc", 1, 10, 2f,
-            "group");
-    SequenceFeatureI sf2 = new SequenceFeature("type", "desc", 1, 10, 2f,
-            "group");
-    SequenceFeatureI sf3 = new SequenceFeature("type", "desc", 1, 10, 2f,
-            "anothergroup");
+    NCList<SimpleFeature> ncl = new NCList<>();
+    SimpleFeature sf1 = new SimpleFeature(1, 10, "type");
+    SimpleFeature sf2 = new SimpleFeature(1, 10, "type");
+    SimpleFeature sf3 = new SimpleFeature(1, 10, "type2");
     ncl.add(sf1);
 
     assertTrue(ncl.contains(sf1));
@@ -553,14 +544,11 @@ public class NCListTest
     /*
      * make some deeper structure in the NCList
      */
-    SequenceFeature sf4 = new SequenceFeature("type", "desc", 2, 9, 2f,
-            "group");
+    SimpleFeature sf4 = new SimpleFeature(2, 9, "type");
     ncl.add(sf4);
     assertTrue(ncl.contains(sf4));
-    SequenceFeature sf5 = new SequenceFeature("type", "desc", 4, 5, 2f,
-            "group");
-    SequenceFeature sf6 = new SequenceFeature("type", "desc", 6, 8, 2f,
-            "group");
+    SimpleFeature sf5 = new SimpleFeature(4, 5, "type");
+    SimpleFeature sf6 = new SimpleFeature(6, 8, "type");
     ncl.add(sf5);
     ncl.add(sf6);
     assertTrue(ncl.contains(sf5));

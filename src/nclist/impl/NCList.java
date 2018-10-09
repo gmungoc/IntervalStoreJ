@@ -78,16 +78,16 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
      */
     Collections.sort(ranges, RangeComparator.BY_START_POSITION);
 
-    List<Range> sublists = buildSubranges(ranges);
+    List<ContiguousI> sublists = buildSubranges(ranges);
 
     /*
      * convert each subrange to an NCNode consisting of a range and
      * (possibly) its contained NCList
      */
-    for (Range sublist : sublists)
+    for (ContiguousI sublist : sublists)
     {
       subranges.add(new NCNode<T>(
-              ranges.subList(sublist.start, sublist.end + 1)));
+              ranges.subList(sublist.getBegin(), sublist.getEnd() + 1)));
     }
 
     size = ranges.size();
@@ -112,9 +112,9 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
    * @param ranges
    * @return
    */
-  protected List<Range> buildSubranges(List<T> ranges)
+  protected List<ContiguousI> buildSubranges(List<T> ranges)
   {
-    List<Range> sublists = new ArrayList<>();
+    List<ContiguousI> sublists = new ArrayList<>();
 
     if (ranges.isEmpty())
     {
@@ -415,8 +415,8 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
   {
     /*
      * The NCList paper describes binary search for this step,
-     * but this not implemented here as (a) I haven't understood it yet
-     * and (b) it seems to imply complications for adding to an NCList
+     * but this not implemented here as it seems to imply complications
+     * for adding to an NCList, and we expect these lists to be short
      */
 
     int i = 0;

@@ -54,7 +54,7 @@ public class FeatureStore
      * @param entry
      * @return
      */
-    abstract boolean compare(SequenceFeatureI entry);
+    abstract boolean compare(ContiguousI entry);
 
     /**
      * serves a search condition for finding the first feature whose start
@@ -69,7 +69,7 @@ public class FeatureStore
       {
 
         @Override
-        boolean compare(SequenceFeatureI entry)
+        boolean compare(ContiguousI entry)
         {
           return entry.getBegin() >= target;
         }
@@ -89,7 +89,7 @@ public class FeatureStore
       {
 
         @Override
-        boolean compare(SequenceFeatureI entry)
+        boolean compare(ContiguousI entry)
         {
           return entry.getEnd() >= target;
         }
@@ -110,7 +110,7 @@ public class FeatureStore
       {
 
         @Override
-        boolean compare(SequenceFeatureI entry)
+        boolean compare(ContiguousI entry)
         {
           return rc.compare(entry, to) >= 0;
         }
@@ -929,7 +929,7 @@ public class FeatureStore
     while (start <= end)
     {
       int mid = (start + end) / 2;
-      SequenceFeatureI entry = features.get(mid);
+      ContiguousI entry = features.get(mid);
       boolean compare = sc.compare(entry);
       if (compare)
       {

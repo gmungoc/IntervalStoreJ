@@ -29,28 +29,28 @@ import nclist.api.ContiguousI;
  * Each node of the NCList tree consists of a range, and (optionally) the NCList
  * of ranges it encloses
  *
- * @param <V>
+ * @param <T>
  */
-class NCNode<V extends ContiguousI> implements ContiguousI
+class NCNode<T extends ContiguousI> implements ContiguousI
 {
   /*
    * deep size (number of ranges included)
    */
   private int size;
 
-  private V region;
+  private T region;
 
   /*
    * null, or an object holding contained subregions of this nodes region
    */
-  private NCList<V> subregions;
+  private NCList<T> subregions;
 
   /**
    * Constructor given a list of ranges
    * 
    * @param ranges
    */
-  NCNode(List<V> ranges)
+  NCNode(List<T> ranges)
   {
     build(ranges);
   }
@@ -60,14 +60,14 @@ class NCNode<V extends ContiguousI> implements ContiguousI
    * 
    * @param range
    */
-  NCNode(V range)
+  NCNode(T range)
   {
-    List<V> ranges = new ArrayList<>();
+    List<T> ranges = new ArrayList<>();
     ranges.add(range);
     build(ranges);
   }
 
-  NCNode(V entry, NCList<V> newNCList)
+  NCNode(T entry, NCList<T> newNCList)
   {
     region = entry;
     subregions = newNCList;
@@ -77,7 +77,7 @@ class NCNode<V extends ContiguousI> implements ContiguousI
   /**
    * @param ranges
    */
-  protected void build(List<V> ranges)
+  protected void build(List<T> ranges)
   {
     size = ranges.size();
 
@@ -87,7 +87,7 @@ class NCNode<V extends ContiguousI> implements ContiguousI
     }
     if (ranges.size() > 1)
     {
-      subregions = new NCList<V>(ranges.subList(1, ranges.size()));
+      subregions = new NCList<T>(ranges.subList(1, ranges.size()));
     }
   }
 
@@ -143,7 +143,7 @@ class NCNode<V extends ContiguousI> implements ContiguousI
    * @param to
    * @param result
    */
-  void findOverlaps(long from, long to, List<V> result)
+  void findOverlaps(long from, long to, List<T> result)
   {
     if (region.getBegin() <= to && region.getEnd() >= from)
     {
@@ -160,7 +160,7 @@ class NCNode<V extends ContiguousI> implements ContiguousI
    * 
    * @param entry
    */
-  synchronized void add(V entry)
+  synchronized void add(T entry)
   {
     if (entry.getBegin() < region.getBegin()
             || entry.getEnd() > region.getEnd())
@@ -172,7 +172,7 @@ class NCNode<V extends ContiguousI> implements ContiguousI
     }
     if (subregions == null)
     {
-      subregions = new NCList<V>(entry);
+      subregions = new NCList<T>(entry);
     }
     else
     {
@@ -208,7 +208,7 @@ class NCNode<V extends ContiguousI> implements ContiguousI
    * 
    * @param entries
    */
-  void getEntries(List<V> entries)
+  void getEntries(List<T> entries)
   {
     entries.add(region);
     if (subregions != null)
@@ -224,7 +224,7 @@ class NCNode<V extends ContiguousI> implements ContiguousI
    * @param entry
    * @return
    */
-  boolean contains(V entry)
+  boolean contains(T entry)
   {
     if (entry == null)
     {
@@ -242,7 +242,7 @@ class NCNode<V extends ContiguousI> implements ContiguousI
    * 
    * @return
    */
-  V getRegion()
+  T getRegion()
   {
     return region;
   }
@@ -252,7 +252,7 @@ class NCNode<V extends ContiguousI> implements ContiguousI
    * 
    * @return
    */
-  NCList<V> getSubRegions()
+  NCList<T> getSubRegions()
   {
     return subregions;
   }
@@ -270,7 +270,7 @@ class NCNode<V extends ContiguousI> implements ContiguousI
   }
 
   /**
-   * Answers the (deep) size of this node i.e. the number of ranges it models
+   * Answers the (deep) size of this node i.e. the number of intervals it models
    * 
    * @return
    */
