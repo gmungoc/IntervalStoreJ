@@ -159,8 +159,9 @@ class NCNode<T extends ContiguousI> implements ContiguousI
    * Add one range to this subrange
    * 
    * @param entry
+   * @param allowDuplicates
    */
-  synchronized void add(T entry)
+  synchronized void add(T entry, boolean allowDuplicates)
   {
     if (entry.getBegin() < region.getBegin()
             || entry.getEnd() > region.getEnd())
@@ -176,7 +177,7 @@ class NCNode<T extends ContiguousI> implements ContiguousI
     }
     else
     {
-      subregions.add(entry);
+      subregions.add(entry, allowDuplicates);
     }
     size++;
   }

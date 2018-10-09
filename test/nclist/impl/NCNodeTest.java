@@ -12,7 +12,6 @@ import org.testng.annotations.Test;
 import features.api.SequenceFeatureI;
 import features.impl.SequenceFeature;
 import junit.extensions.PA;
-import nclist.impl.NCNode;
 
 public class NCNodeTest
 {
@@ -23,7 +22,7 @@ public class NCNodeTest
     NCNode<Range> node = new NCNode<Range>(r1);
     assertEquals(node.getBegin(), 10);
     Range r2 = new Range(10, 15);
-    node.add(r2);
+    node.add(r2, false);
 
     List<Range> contents = new ArrayList<Range>();
     node.getEntries(contents);
@@ -42,7 +41,7 @@ public class NCNodeTest
     NCNode<Range> node = new NCNode<Range>(r1);
     assertEquals(node.getBegin(), 10);
     Range r2 = new Range(9, 15);
-    node.add(r2);
+    node.add(r2, false);
   }
 
   @Test(
@@ -55,7 +54,7 @@ public class NCNodeTest
     NCNode<Range> node = new NCNode<Range>(r1);
     assertEquals(node.getBegin(), 10);
     Range r2 = new Range(12, 21);
-    node.add(r2);
+    node.add(r2, false);
   }
 
   @Test(groups = "Functional")
@@ -76,7 +75,7 @@ public class NCNodeTest
     assertTrue(entries.contains(r1));
 
     Range r2 = new Range(15, 18);
-    node.add(r2);
+    node.add(r2, false);
     entries.clear();
     node.getEntries(entries);
     assertEquals(entries.size(), 2);
@@ -116,8 +115,8 @@ public class NCNodeTest
     Range r2 = new Range(14, 15);
     Range r3 = new Range(16, 17);
     NCNode<Range> node = new NCNode<Range>(r1);
-    node.add(r2);
-    node.add(r3);
+    node.add(r2, false);
+    node.add(r3, false);
 
     /*
      * node has root range [10-20] and contains an

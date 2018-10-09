@@ -146,20 +146,19 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
   }
 
   /**
-   * Adds one entry to the stored set (with duplicates allowed)
+   * Adds one entry to the stored set (with duplicates not allowed). Answers
+   * true if the entry was added, false if not (rejected as a duplicate)
    * 
    * @param entry
    */
-  public void add(T entry)
+  public boolean add(T entry)
   {
-    add(entry, true);
+    return add(entry, false);
   }
 
-  /* (non-Javadoc)
-   * @see nclist.impl.NCListI#add(T, boolean)
-   */
   @Override
-  public synchronized boolean add(T entry, boolean allowDuplicates)
+  public synchronized boolean add(final T entry,
+          final boolean allowDuplicates)
   {
     if (!allowDuplicates && contains(entry))
     {
@@ -219,7 +218,7 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
         /*
          * push new entry inside this subrange as it encloses it
          */
-        subrange.add(entry);
+        subrange.add(entry, allowDuplicates);
         return true;
       }
 

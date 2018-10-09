@@ -481,8 +481,8 @@ public class NCListTest
     /*
      * test with duplicate objects in NCList
      */
-    features.add(sf1);
-    features.add(sf1);
+    features.add(sf1, true);
+    features.add(sf1, true);
     assertEquals(features.getEntries().size(), 2);
     assertSame(features.getEntries().get(0), sf1);
     assertSame(features.getEntries().get(1), sf1);
@@ -621,7 +621,7 @@ public class NCListTest
     /*
      * repeat but now add ranges one at a time
      * notice that 42-42 end up inside 40-50 so we get
-     * a different but equal valid NCList structure
+     * a different but equally valid NCList structure
      */
     ranges.clear();
     ncl = new NCList<Range>(ranges);
@@ -630,7 +630,7 @@ public class NCListTest
     ncl.add(new Range(40, 45));
     ncl.add(new Range(41, 46));
     ncl.add(new Range(42, 42));
-    ncl.add(new Range(42, 42));
+    ncl.add(new Range(42, 42), true); // allow duplicate
     assertTrue(ncl.isValid());
     assertEquals(ncl.toString(),
             "[40-50 [40-45 [42-42 [42-42]], 41-46], 45-55]");
