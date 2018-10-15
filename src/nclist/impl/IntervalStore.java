@@ -2,7 +2,6 @@ package nclist.impl;
 
 import java.util.AbstractCollection;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -84,81 +83,6 @@ public class IntervalStore<T extends IntervalI>
 
   }
 
-  /**
-   * a class providing criteria for performing a binary search of a list
-   */
-  abstract static class SearchCriterion
-  {
-    /**
-     * Answers true if the entry passes the search criterion test
-     * 
-     * @param entry
-     * @return
-     */
-    abstract boolean compare(IntervalI entry);
-
-    /**
-     * serves a search condition for finding the first interval whose start
-     * position follows a given target location
-     * 
-     * @param target
-     * @return
-     */
-    static SearchCriterion byStart(final long target)
-    {
-      return new SearchCriterion()
-      {
-
-        @Override
-        boolean compare(IntervalI entry)
-        {
-          return entry.getBegin() >= target;
-        }
-      };
-    }
-
-    /**
-     * serves a search condition for finding the first interval whose end
-     * position is at or follows a given target location
-     * 
-     * @param target
-     * @return
-     */
-    static SearchCriterion byEnd(final long target)
-    {
-      return new SearchCriterion()
-      {
-
-        @Override
-        boolean compare(IntervalI entry)
-        {
-          return entry.getEnd() >= target;
-        }
-      };
-    }
-
-    /**
-     * serves a search condition for finding the first interval which follows
-     * the given range as determined by a supplied comparator
-     * 
-     * @param target
-     * @return
-     */
-    static SearchCriterion byinterval(final IntervalI to,
-            final Comparator<IntervalI> rc)
-    {
-      return new SearchCriterion()
-      {
-
-        @Override
-        boolean compare(IntervalI entry)
-        {
-          return rc.compare(entry, to) >= 0;
-        }
-      };
-    }
-  }
-
   private List<T> nonNested;
 
   private NCList<T> nested;
@@ -211,8 +135,9 @@ public class IntervalStore<T extends IntervalI>
       /*
        * find the first stored interval which doesn't precede the new one
        */
-      int insertPosition = binarySearch(nonNested, SearchCriterion
-              .byinterval(entry, RangeComparator.BY_START_POSITION));
+      int insertPosition = BinarySearcher.binarySearch(nonNested,
+              BinarySearcher.byInterval(entry,
+                      RangeComparator.BY_START_POSITION));
       // int insertPosition = binarySearch(nonNested, SearchCriterion
       // .byStart(entry.getBegin()));
 
@@ -222,14 +147,14 @@ public class IntervalStore<T extends IntervalI>
        */
       if (insertPosition > 0)
       {
-        if (encloses(nonNested.get(insertPosition - 1), entry))
+        if (Range.encloses(nonNested.get(insertPosition - 1), entry))
         {
           return false;
         }
       }
       if (insertPosition < nonNested.size())
       {
-        if (encloses(entry, nonNested.get(insertPosition)))
+        if (Range.encloses(entry, nonNested.get(insertPosition)))
         {
           return false;
         }
@@ -373,8 +298,8 @@ public class IntervalStore<T extends IntervalI>
     /*
      * locate the first entry in the list which does not precede the interval
      */
-    int pos = binarySearch(intervals, SearchCriterion.byinterval(interval,
-            RangeComparator.BY_START_POSITION));
+    int pos = BinarySearcher.binarySearch(intervals, BinarySearcher
+            .byInterval(interval, RangeComparator.BY_START_POSITION));
     // int pos = binarySearch(intervals,
     // SearchCriterion.byStart(interval.getBegin()));
     int len = intervals.size();
@@ -390,65 +315,6 @@ public class IntervalStore<T extends IntervalI>
         return true;
       }
       pos++;
-    }
-    return false;
-  }
-
-  /**
-   * Performs a binary search of the (sorted) list to find the index of the
-   * first entry which returns true for the given comparator function. Returns
-   * the length of the list if there is no such entry.
-   * 
-   * @param intervals
-   * @param sc
-   * @return
-   */
-  protected static int binarySearch(List<? extends IntervalI> intervals,
-          SearchCriterion sc)
-  {
-    int start = 0;
-    int end = intervals.size() - 1;
-    int matched = intervals.size();
-
-    while (start <= end)
-    {
-      int mid = (start + end) / 2;
-      IntervalI entry = intervals.get(mid);
-      boolean compare = sc.compare(entry);
-      if (compare)
-      {
-        matched = mid;
-        end = mid - 1;
-      }
-      else
-      {
-        start = mid + 1;
-      }
-    }
-
-    return matched;
-  }
-
-  /**
-   * Answers true if range1 properly encloses range2, else false
-   * 
-   * @param range1
-   * @param range2
-   * @return
-   */
-  protected static boolean encloses(IntervalI range1, IntervalI range2)
-  {
-    int begin1 = range1.getBegin();
-    int begin2 = range2.getBegin();
-    int end1 = range1.getEnd();
-    int end2 = range2.getEnd();
-    if (begin1 == begin2 && end1 > end2)
-    {
-      return true;
-    }
-    if (begin1 < begin2 && end1 >= end2)
-    {
-      return true;
     }
     return false;
   }
@@ -487,7 +353,8 @@ public class IntervalStore<T extends IntervalI>
      * find the first interval whose end position is
      * after the target range start
      */
-    int startIndex = binarySearch(nonNested, SearchCriterion.byEnd(from));
+    int startIndex = BinarySearcher.binarySearch(nonNested,
+            BinarySearcher.byEnd(from));
   
     final int startIndex1 = startIndex;
     int i = startIndex1;
