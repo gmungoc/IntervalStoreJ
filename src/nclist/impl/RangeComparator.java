@@ -22,7 +22,7 @@ package nclist.impl;
 
 import java.util.Comparator;
 
-import nclist.api.ContiguousI;
+import nclist.api.IntervalI;
 
 /**
  * A comparator that orders ranges by either start position or end position
@@ -32,12 +32,12 @@ import nclist.api.ContiguousI;
  * @author gmcarstairs
  *
  */
-public class RangeComparator implements Comparator<ContiguousI>
+public class RangeComparator implements Comparator<IntervalI>
 {
-  public static final Comparator<ContiguousI> BY_START_POSITION = new RangeComparator(
+  public static final Comparator<IntervalI> BY_START_POSITION = new RangeComparator(
           true);
 
-  public static final Comparator<ContiguousI> BY_END_POSITION = new RangeComparator(
+  public static final Comparator<IntervalI> BY_END_POSITION = new RangeComparator(
           false);
 
   boolean byStart;
@@ -54,7 +54,7 @@ public class RangeComparator implements Comparator<ContiguousI>
   }
 
   @Override
-  public int compare(ContiguousI o1, ContiguousI o2)
+  public int compare(IntervalI o1, IntervalI o2)
   {
     int len1 = o1.getEnd() - o1.getBegin();
     int len2 = o2.getEnd() - o2.getBegin();

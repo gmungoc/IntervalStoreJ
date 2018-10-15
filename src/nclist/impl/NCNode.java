@@ -21,9 +21,11 @@
 package nclist.impl;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
-import nclist.api.ContiguousI;
+import nclist.api.IntervalI;
 
 /**
  * Each node of the NCList tree consists of a range, and (optionally) the NCList
@@ -31,8 +33,49 @@ import nclist.api.ContiguousI;
  *
  * @param <T>
  */
-class NCNode<T extends ContiguousI> implements ContiguousI
+class NCNode<T extends IntervalI> implements IntervalI
 {
+  /**
+   * A depth-first iterator over the intervals stored in the NCNode. The
+   * optional <code>remove</code> operation is not supported.
+   * 
+   * @author gmcarstairs
+   *
+   */
+  private class NCNodeIterator implements Iterator<T>
+  {
+    boolean first = true;
+    Iterator<T> subregionIterator;
+
+    @Override
+    public boolean hasNext()
+    {
+      return first
+              || (subregionIterator != null && subregionIterator.hasNext());
+    }
+
+    /**
+     * Answers the next interval - initially the top level interval for this
+     * node, thereafter the intervals returned by the NCList's iterator
+     */
+    @Override
+    public T next()
+    {
+      if (first)
+      {
+        subregionIterator = subregions == null ? null
+                : subregions.iterator();
+        first = false;
+        return region;
+      }
+      if (subregionIterator == null || !subregionIterator.hasNext())
+      {
+        throw new NoSuchElementException();
+      }
+      return subregionIterator.next();
+    }
+  }
+
   /*
    * deep size (number of ranges included)
    */
@@ -109,12 +152,14 @@ class NCNode<T extends ContiguousI> implements ContiguousI
    * <pre>
    * [1-100 [10-30 [10-20]], 15-30 [20-20]]
    * </pre>
+   * 
+   * where the format for each interval is as given by <code>T.toString()</code>
    */
   @Override
   public String toString()
   {
     StringBuilder sb = new StringBuilder(10 * size);
-    sb.append(region.getBegin()).append("-").append(region.getEnd());
+    sb.append(region.toString());
     if (subregions != null)
     {
       sb.append(" ").append(subregions.toString());
@@ -128,7 +173,7 @@ class NCNode<T extends ContiguousI> implements ContiguousI
     {
       sb.append(" ");
     }
-    sb.append(region.getBegin()).append("-").append(region.getEnd());
+    sb.append(region.toString());
     if (subregions != null)
     {
       sb.append(System.lineSeparator());
@@ -159,9 +204,8 @@ class NCNode<T extends ContiguousI> implements ContiguousI
    * Add one range to this subrange
    * 
    * @param entry
-   * @param allowDuplicates
    */
-  synchronized void add(T entry, boolean allowDuplicates)
+  synchronized void add(T entry)
   {
     if (entry.getBegin() < region.getBegin()
             || entry.getEnd() > region.getEnd())
@@ -177,7 +221,7 @@ class NCNode<T extends ContiguousI> implements ContiguousI
     }
     else
     {
-      subregions.add(entry, allowDuplicates);
+      subregions.add(entry);
     }
     size++;
   }
@@ -225,7 +269,7 @@ class NCNode<T extends ContiguousI> implements ContiguousI
    * @param entry
    * @return
    */
-  boolean contains(T entry)
+  boolean contains(IntervalI entry)
   {
     if (entry == null)
     {
@@ -278,5 +322,25 @@ class NCNode<T extends ContiguousI> implements ContiguousI
   int size()
   {
     return size;
+  }
+
+  /**
+   * Answers the depth of NCNode / NCList nesting in the data tree
+   * 
+   * @return
+   */
+  int getDepth()
+  {
+    return subregions == null ? 1 : 1 + subregions.getDepth();
+  }
+
+  /**
+   * Answers a depth-first iterator over the intervals stored in this node
+   * 
+   * @return
+   */
+  public Iterator<T> iterator()
+  {
+    return new NCNodeIterator();
   }
 }

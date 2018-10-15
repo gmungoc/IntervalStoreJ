@@ -18,15 +18,11 @@
  * along with Jalview.  If not, see <http://www.gnu.org/licenses/>.
  * The Jalview Authors are detailed in the 'AUTHORS' file.
  */
-package features.api;
+package nclist.api;
 
-import nclist.api.ContiguousI;
-
-/**
- * An extension of ContiguousI that allows start/end values to be interpreted
- * instead as two contact positions
- */
-public interface FeatureLocationI extends ContiguousI
+public interface IntervalI
 {
-  boolean isContactFeature();
+  int getBegin();
+
+  int getEnd();
 }

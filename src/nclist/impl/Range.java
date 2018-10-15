@@ -20,12 +20,12 @@
  */
 package nclist.impl;
 
-import nclist.api.ContiguousI;
+import nclist.api.IntervalI;
 
 /**
  * An immutable data bean that models a start-end range
  */
-public class Range implements ContiguousI
+public class Range implements IntervalI
 {
   public final int start;
 

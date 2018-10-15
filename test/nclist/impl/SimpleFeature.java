@@ -1,11 +1,11 @@
 package nclist.impl;
 
-import nclist.api.ContiguousI;
+import nclist.api.IntervalI;
 
 /**
  * A simplified feature instance sufficient for unit test purposes.
  */
-public class SimpleFeature implements ContiguousI
+public class SimpleFeature implements IntervalI
 {
   final private int begin;
 
@@ -18,6 +18,11 @@ public class SimpleFeature implements ContiguousI
     begin = from;
     end = to;
     description = desc;
+  }
+
+  public SimpleFeature(SimpleFeature sf1)
+  {
+    this(sf1.begin, sf1.end, sf1.description);
   }
 
   @Override
@@ -64,6 +69,12 @@ public class SimpleFeature implements ContiguousI
       }
     }
     return false;
+  }
+
+  @Override
+  public String toString()
+  {
+    return begin + ":" + end + ":" + description;
   }
 
 }

@@ -6,7 +6,7 @@ import java.util.Comparator;
 
 import org.testng.annotations.Test;
 
-import nclist.api.ContiguousI;
+import nclist.api.IntervalI;
 import nclist.impl.Range;
 import nclist.impl.RangeComparator;
 
@@ -33,7 +33,7 @@ public class RangeComparatorTest
   @Test(groups = "Functional")
   public void testCompare_byStart()
   {
-    Comparator<ContiguousI> comp = RangeComparator.BY_START_POSITION;
+    Comparator<IntervalI> comp = RangeComparator.BY_START_POSITION;
 
     // same start position, same length
     assertEquals(comp.compare(new Range(10, 20), new Range(10, 20)), 0);
@@ -50,7 +50,7 @@ public class RangeComparatorTest
   @Test(groups = "Functional")
   public void testCompare_byEnd()
   {
-    Comparator<ContiguousI> comp = RangeComparator.BY_END_POSITION;
+    Comparator<IntervalI> comp = RangeComparator.BY_END_POSITION;
 
     // same end position, same length
     assertEquals(comp.compare(new Range(10, 20), new Range(10, 20)), 0);

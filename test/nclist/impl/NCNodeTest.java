@@ -9,8 +9,6 @@ import java.util.List;
 
 import org.testng.annotations.Test;
 
-import features.api.SequenceFeatureI;
-import features.impl.SequenceFeature;
 import junit.extensions.PA;
 
 public class NCNodeTest
@@ -22,7 +20,7 @@ public class NCNodeTest
     NCNode<Range> node = new NCNode<Range>(r1);
     assertEquals(node.getBegin(), 10);
     Range r2 = new Range(10, 15);
-    node.add(r2, false);
+    node.add(r2);
 
     List<Range> contents = new ArrayList<Range>();
     node.getEntries(contents);
@@ -41,7 +39,7 @@ public class NCNodeTest
     NCNode<Range> node = new NCNode<Range>(r1);
     assertEquals(node.getBegin(), 10);
     Range r2 = new Range(9, 15);
-    node.add(r2, false);
+    node.add(r2);
   }
 
   @Test(
@@ -54,7 +52,7 @@ public class NCNodeTest
     NCNode<Range> node = new NCNode<Range>(r1);
     assertEquals(node.getBegin(), 10);
     Range r2 = new Range(12, 21);
-    node.add(r2, false);
+    node.add(r2);
   }
 
   @Test(groups = "Functional")
@@ -75,7 +73,7 @@ public class NCNodeTest
     assertTrue(entries.contains(r1));
 
     Range r2 = new Range(15, 18);
-    node.add(r2, false);
+    node.add(r2);
     entries.clear();
     node.getEntries(entries);
     assertEquals(entries.size(), 2);
@@ -89,13 +87,10 @@ public class NCNodeTest
   @Test(groups = "Functional")
   public void testContains()
   {
-    SequenceFeatureI sf1 = new SequenceFeature("type", "desc", 1, 10, 2f,
-            "group");
-    SequenceFeatureI sf2 = new SequenceFeature("type", "desc", 1, 10, 2f,
-            "group");
-    SequenceFeatureI sf3 = new SequenceFeature("type", "desc", 1, 10, 2f,
-            "anothergroup");
-    NCNode<SequenceFeatureI> node = new NCNode<>(sf1);
+    SimpleFeature sf1 = new SimpleFeature(1, 10, "desc");
+    SimpleFeature sf2 = new SimpleFeature(1, 10, "desc");
+    SimpleFeature sf3 = new SimpleFeature(1, 10, "description");
+    NCNode<SimpleFeature> node = new NCNode<>(sf1);
 
     assertFalse(node.contains(null));
     assertTrue(node.contains(sf1));
@@ -115,8 +110,8 @@ public class NCNodeTest
     Range r2 = new Range(14, 15);
     Range r3 = new Range(16, 17);
     NCNode<Range> node = new NCNode<Range>(r1);
-    node.add(r2, false);
-    node.add(r3, false);
+    node.add(r2);
+    node.add(r3);
 
     /*
      * node has root range [10-20] and contains an

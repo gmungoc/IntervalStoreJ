@@ -20,11 +20,14 @@
  */
 package nclist.impl;
 
+import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
-import nclist.api.ContiguousI;
+import nclist.api.IntervalI;
 
 /**
  * An adapted implementation of NCList as described in the paper
@@ -36,8 +39,75 @@ import nclist.api.ContiguousI;
  * https://doi.org/10.1093/bioinformatics/btl647
  * </pre>
  */
-public class NCList<T extends ContiguousI> implements NCListI<T>
+public class NCList<T extends IntervalI> extends AbstractCollection<T>
 {
+  /**
+   * A depth-first iterator over the elements stored in the NCList
+   */
+  private class NCListIterator implements Iterator<T>
+  {
+    int subrangeIndex;
+
+    Iterator<T> nodeIterator;
+
+    /**
+     * Constructor bootstraps a pointer to an iterator over the first subrange
+     * (if any)
+     */
+    NCListIterator()
+    {
+      subrangeIndex = nextSubrange(-1);
+    }
+
+    /**
+     * Moves the subrange iterator to the next subrange which is not empty, or
+     * sets to null if none found. Answers the index of the corresponding
+     * subrange in the list.
+     * 
+     * @return
+     */
+    private int nextSubrange(int after)
+    {
+      for (int i = after + 1; i < subranges.size(); i++)
+      {
+        if (subranges.get(i).size() > 0)
+        {
+          nodeIterator = subranges.get(i).iterator();
+          return i;
+        }
+      }
+      nodeIterator = null;
+      return -1;
+    }
+
+    @Override
+    public boolean hasNext()
+    {
+      return nodeIterator != null && nodeIterator.hasNext();
+    }
+
+    /**
+     * Answers the next element returned by the current NCNode's iterator, and
+     * advances the iterator (to the next NCNode if necessary)
+     */
+    @Override
+    public T next()
+    {
+      if (nodeIterator == null || !nodeIterator.hasNext())
+      {
+        throw new NoSuchElementException();
+      }
+      T result = nodeIterator.next();
+
+      if (!nodeIterator.hasNext())
+      {
+        subrangeIndex = nextSubrange(subrangeIndex);
+      }
+      return result;
+    }
+
+  }
+
   /*
    * the number of ranges represented
    */
@@ -78,13 +148,13 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
      */
     Collections.sort(ranges, RangeComparator.BY_START_POSITION);
 
-    List<ContiguousI> sublists = buildSubranges(ranges);
+    List<IntervalI> sublists = buildSubranges(ranges);
 
     /*
      * convert each subrange to an NCNode consisting of a range and
      * (possibly) its contained NCList
      */
-    for (ContiguousI sublist : sublists)
+    for (IntervalI sublist : sublists)
     {
       subranges.add(new NCNode<T>(
               ranges.subList(sublist.getBegin(), sublist.getEnd() + 1)));
@@ -112,9 +182,9 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
    * @param ranges
    * @return
    */
-  protected List<ContiguousI> buildSubranges(List<T> ranges)
+  protected List<IntervalI> buildSubranges(List<T> ranges)
   {
-    List<ContiguousI> sublists = new ArrayList<>();
+    List<IntervalI> sublists = new ArrayList<>();
 
     if (ranges.isEmpty())
     {
@@ -126,7 +196,7 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
 
     for (int i = 0; i < ranges.size(); i++)
     {
-      ContiguousI nextInterval = ranges.get(i);
+      IntervalI nextInterval = ranges.get(i);
       long nextStart = nextInterval.getBegin();
       long nextEnd = nextInterval.getEnd();
       if (nextStart > lastEndPos || nextEnd > lastEndPos)
@@ -146,28 +216,16 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
   }
 
   /**
-   * Adds one entry to the stored set (with duplicates not allowed). Answers
-   * true if the entry was added, false if not (rejected as a duplicate)
+   * Adds one entry to the stored set
    * 
    * @param entry
    */
+  @Override
   public boolean add(T entry)
   {
-    return add(entry, false);
-  }
-
-  @Override
-  public synchronized boolean add(final T entry,
-          final boolean allowDuplicates)
-  {
-    if (!allowDuplicates && contains(entry))
-    {
-      return false;
-    }
-
     size++;
-    long start = entry.getBegin();
-    long end = entry.getEnd();
+    final long start = entry.getBegin();
+    final long end = entry.getEnd();
 
     /*
      * cases:
@@ -175,7 +233,7 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
      * - follows all subranges: add as NCNode on end of list
      * - enclosed by a subrange - add recursively to subrange
      * - encloses one or more subranges - push them inside it
-     * - none of the above - add as a new node and resort nodes list (?)
+     * - spans two subranges - insert between them
      */
 
     /*
@@ -218,7 +276,7 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
         /*
          * push new entry inside this subrange as it encloses it
          */
-        subrange.add(entry, allowDuplicates);
+        subrange.add(entry);
         return true;
       }
 
@@ -249,17 +307,16 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
              * entry encloses one or more preceding subranges
              */
             addEnclosingRange(entry, firstEnclosed, lastEnclosed);
-            return true;
           }
           else
           {
             /*
-             * entry spans two subranges but doesn't enclose any
+             * entry overlaps two subranges but doesn't enclose either
              * so just add it 
              */
             subranges.add(j, new NCNode<>(entry));
-            return true;
           }
+          return true;
         }
       }
       else
@@ -280,28 +337,30 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
     {
       subranges.add(new NCNode<>(entry));
     }
-
     return true;
   }
 
-  /* (non-Javadoc)
-   * @see nclist.impl.NCListI#contains(T)
-   */
   @Override
-  public boolean contains(T entry)
+  public boolean contains(Object entry)
   {
+    if (!(entry instanceof IntervalI))
+    {
+      return false;
+    }
+    IntervalI interval = (IntervalI) entry;
+
     /*
      * find the first sublist that might overlap, i.e. 
      * the first whose end position is >= from
      */
-    int candidateIndex = findFirstOverlap(entry.getBegin());
+    int candidateIndex = findFirstOverlap(interval.getBegin());
 
     if (candidateIndex == -1)
     {
       return false;
     }
 
-    int to = entry.getEnd();
+    int to = interval.getEnd();
 
     for (int i = candidateIndex; i < subranges.size(); i++)
     {
@@ -313,7 +372,7 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
          */
         break;
       }
-      if (candidate.contains(entry))
+      if (candidate.contains(interval))
       {
         return true;
       }
@@ -352,10 +411,13 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
     }
   }
 
-  /* (non-Javadoc)
-   * @see nclist.impl.NCListI#findOverlaps(long, long)
+  /**
+   * Answers a list of contained intervals that overlap the given range
+   * 
+   * @param from
+   * @param to
+   * @return
    */
-  @Override
   public List<T> findOverlaps(long from, long to)
   {
     List<T> result = new ArrayList<>();
@@ -446,10 +508,11 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
     return subranges.toString();
   }
 
-  /* (non-Javadoc)
-   * @see nclist.impl.NCListI#prettyPrint()
+  /**
+   * Answers the NCList as an indented list
+   * 
+   * @return
    */
-  @Override
   public String prettyPrint()
   {
     StringBuilder sb = new StringBuilder(512);
@@ -479,10 +542,12 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
     }
   }
 
-  /* (non-Javadoc)
-   * @see nclist.impl.NCListI#isValid()
+  /**
+   * Answers true if the store's structure is valid (nesting containment rules
+   * are obeyed), else false. For use in testing and debugging.
+   * 
+   * @return
    */
-  @Override
   public boolean isValid()
   {
     return isValid(Integer.MIN_VALUE, Integer.MAX_VALUE);
@@ -537,8 +602,10 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
     return subranges.isEmpty() ? 0 : subranges.get(0).getBegin();
   }
 
-  /* (non-Javadoc)
-   * @see nclist.impl.NCListI#size()
+  /**
+   * Answers the number of intervals stored
+   * 
+   * @return
    */
   @Override
   public int size()
@@ -549,7 +616,6 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
   /* (non-Javadoc)
    * @see nclist.impl.NCListI#getEntries()
    */
-  @Override
   public List<T> getEntries()
   {
     List<T> result = new ArrayList<>();
@@ -570,11 +636,15 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
     }
   }
 
-  /* (non-Javadoc)
-   * @see nclist.impl.NCListI#delete(T)
+  /**
+   * Removes the first interval <code>I</code>found that is equal to T
+   * (<code>I.equals(T)</code>). Answers true if an interval is removed, false
+   * if no match is found. This method is synchronized so thread-safe.
+   * 
+   * @param entry
+   * @return
    */
-  @Override
-  public synchronized boolean delete(T entry)
+  public synchronized boolean remove(T entry)
   {
     if (entry == null)
     {
@@ -598,7 +668,7 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
         subranges.remove(i);
         if (subRegions != null)
         {
-          subranges.addAll(subRegions.subranges);
+          subranges.addAll(i, subRegions.subranges);
           Collections.sort(subranges, RangeComparator.BY_START_POSITION);
         }
         size--;
@@ -606,7 +676,7 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
       }
       else
       {
-        if (subRegions != null && subRegions.delete(entry))
+        if (subRegions != null && subRegions.remove(entry))
         {
           size--;
           subrange.deleteSubRegionsIfEmpty();
@@ -615,5 +685,34 @@ public class NCList<T extends ContiguousI> implements NCListI<T>
       }
     }
     return false;
+  }
+
+  /**
+   * Answers the depth of interval nesting of this object, where 1 means there
+   * are no nested sub-intervals
+   * 
+   * @return
+   */
+  public int getDepth()
+  {
+    int subDepth = 0;
+    for (NCNode<T> subrange : subranges)
+    {
+      subDepth = Math.max(subDepth, subrange.getDepth());
+    }
+
+    return subDepth;
+  }
+
+  /**
+   * Answers a depth-first iterator over the elements in the NCList. Note that
+   * the element order is not specified (and may vary depending on the order of
+   * construction of the NCList). The iterator does not support the optional
+   * <code>remove</code> operation.
+   */
+  @Override
+  public Iterator<T> iterator()
+  {
+    return new NCListIterator();
   }
 }
