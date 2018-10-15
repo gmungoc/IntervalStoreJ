@@ -1,6 +1,7 @@
 package nclist.impl;
 
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -44,6 +45,11 @@ public class LoadTest
     System.out.println("\ntestNclistDepth_variants: start");
     List<SimpleFeature> intervals = new ArrayList<>();
     File f = new File(VARIANTS_FILENAME);
+    if (!f.exists())
+    {
+      fail(VARIANTS_FILENAME + " not found - please unzip "
+              + VARIANTS_FILENAME + ".zip");
+    }
     try (BufferedReader br = new BufferedReader(new FileReader(f)))
     {
       int snvCount = 0;
@@ -87,6 +93,11 @@ public class LoadTest
     System.out.println("\ntestNclistDepth_genes: start");
     List<SimpleFeature> intervals = new ArrayList<>();
     File f = new File(GENES_FILENAME);
+    if (!f.exists())
+    {
+      fail(GENES_FILENAME + " not found - please unzip " + GENES_FILENAME
+              + ".zip");
+    }
     try (BufferedReader br = new BufferedReader(new FileReader(f)))
     {
       String lastChr = null;
@@ -167,6 +178,11 @@ public class LoadTest
   {
     System.out.println("\ntestIntervalStoreDepth_genes: start");
     File f = new File(GENES_FILENAME);
+    if (!f.exists())
+    {
+      fail(GENES_FILENAME + " not found - please unzip " + GENES_FILENAME
+              + ".zip");
+    }
     try (BufferedReader br = new BufferedReader(new FileReader(f)))
     {
       String lastChr = null;
