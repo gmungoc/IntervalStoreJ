@@ -34,7 +34,7 @@ public class NCListTest
     ranges.add(new Range(1, 100));
 
     NCList<Range> ncl = new NCList<>(ranges);
-    String expected = "[1-100 [10-30 [10-20 [10-20 [11-19]], 15-30 [20-20]]]]";
+    String expected = "[1-100 [10-30 [10-20, 10-20 [11-19], 15-30 [20-20]]]]";
     assertEquals(ncl.toString(), expected);
     assertTrue(ncl.isValid());
 
@@ -350,8 +350,8 @@ public class NCListTest
     NCList<Range> ncl = new NCList<Range>(ranges);
     assertTrue(ncl.isValid());
     assertEquals(ncl.toString(),
-            "[40-50 [40-45, 41-46 [42-42 [42-42]]], 45-55]");
-    String expected = "40-50\n  40-45\n  41-46\n    42-42\n      42-42\n45-55\n";
+            "[40-50 [40-45, 41-46 [42-42, 42-42]], 45-55]");
+    String expected = "40-50\n  40-45\n  41-46\n    42-42\n    42-42\n45-55\n";
     assertEquals(ncl.prettyPrint(), expected);
 
     /*
@@ -369,14 +369,14 @@ public class NCListTest
     ncl.add(new Range(42, 42)); // duplicates allowed
     assertTrue(ncl.isValid());
     assertEquals(ncl.toString(),
-            "[40-50 [40-45 [42-42 [42-42]], 41-46], 45-55]");
-    expected = "40-50\n  40-45\n    42-42\n      42-42\n  41-46\n45-55\n";
+            "[40-50 [40-45 [42-42, 42-42], 41-46], 45-55]");
+    expected = "40-50\n  40-45\n    42-42\n    42-42\n  41-46\n45-55\n";
     assertEquals(ncl.prettyPrint(), expected);
   }
 
   /**
-   * If intervals have an unambiguous order of containment, the NCList is the
-   * same regardless of the order in which they are added to it
+   * If intervals have an ambiguous order of containment, the NCList varies
+   * depending on the order in which they are added to it
    */
   @Test(groups = "Functional")
   public void testLoadOrder()
@@ -394,33 +394,22 @@ public class NCListTest
      */
     NCList<SimpleFeature> ncl = new NCList<>(ranges);
     assertEquals(ncl.size(), 6);
-    assertEquals(ncl.getDepth(), 6);
-    String asString = "[1:205602:gene [187:90957:transcript [187:90957:exon [226:90335:cds [251:260:indel [256:256:SNV]]]]]]";
-    assertEquals(ncl.toString(), asString);
-
-    /*
-     * add features one at a time, from 'large' to 'small' - same result
-     */
-    ncl = new NCList<>();
-    int[] order = new int[] { 0, 1, 2, 3, 4, 5 };
-    for (int i : order)
-    {
-      ncl.add(ranges.get(i));
-    }
+    assertEquals(ncl.getDepth(), 5);
+    String asString = "[1:205602:gene [187:90957:transcript, 187:90957:exon [226:90335:cds [251:260:indel [256:256:SNV]]]]]";
     assertEquals(ncl.toString(), asString);
 
     /*
      * add features one at a time, from 'small' to 'large' 
-     * - same result except exon/transcript nesting reversed
+     * - same result
      */
     ncl = new NCList<>();
-    order = new int[] { 5, 4, 3, 2, 1, 0 };
+    int[] order = new int[] { 5, 4, 3, 2, 1, 0 };
     for (int i : order)
     {
       ncl.add(ranges.get(i));
     }
-    String asString2 = "[1:205602:gene [187:90957:exon [187:90957:transcript [226:90335:cds [251:260:indel [256:256:SNV]]]]]]";
-    assertEquals(ncl.toString(), asString2);
+    assertEquals(ncl.toString(), asString);
+    assertTrue(ncl.isValid());
 
     /*
      * add features one at a time, in mixed order - same result as previous
@@ -431,7 +420,21 @@ public class NCListTest
     {
       ncl.add(ranges.get(i));
     }
+    assertEquals(ncl.toString(), asString);
+    assertTrue(ncl.isValid());
+
+    /*
+     * add features one at a time, from 'large' to 'small' - slightly different
+     */
+    ncl = new NCList<>();
+    order = new int[] { 0, 1, 2, 3, 4, 5 };
+    for (int i : order)
+    {
+      ncl.add(ranges.get(i));
+    }
+    String asString2 = "[1:205602:gene [187:90957:exon [226:90335:cds [251:260:indel [256:256:SNV]]], 187:90957:transcript]]";
     assertEquals(ncl.toString(), asString2);
+    assertTrue(ncl.isValid());
   }
 
   /**
@@ -511,8 +514,8 @@ public class NCListTest
     assertEquals(ncl.getDepth(), 3);
     ncl.add(new Range(13, 16)); // within [13-17]
     assertEquals(ncl.getDepth(), 4);
-    ncl.add(new Range(13, 16)); // within [13-16], duplicate
-    assertEquals(ncl.getDepth(), 5);
+    ncl.add(new Range(13, 16)); // sibling to [13-16], duplicate
+    assertEquals(ncl.getDepth(), 4);
   }
 
   /**
@@ -577,7 +580,7 @@ public class NCListTest
 
     /*
      * add intervals large to small in pairs, fromLeft then fromRight
-     * - also results in a deeply nested tree under [1-8]
+     * - also results in a deeply nested tree mostly under [1-8]
      */
     NCList<Range> ncl3 = new NCList<>();
     for (int i = 0; i < j; i++)
@@ -676,5 +679,16 @@ public class NCListTest
     Range r = new Range(from, to);
     l.add(r);
     return r;
+  }
+
+  @Test(groups = "Functional")
+  public void testAdd_colocated()
+  {
+    List<Range> ranges = new ArrayList<Range>();
+    ranges.add(new Range(20, 50));
+    ranges.add(new Range(20, 50));
+    NCList<Range> ncl = new NCList<Range>(ranges);
+    assertEquals(ncl.toString(), "[20-50, 20-50]");
+    assertTrue(ncl.isValid());
   }
 }

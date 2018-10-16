@@ -138,8 +138,6 @@ public class IntervalStore<T extends IntervalI>
       int insertPosition = BinarySearcher.binarySearch(nonNested,
               BinarySearcher.byInterval(entry,
                       RangeComparator.BY_START_POSITION));
-      // int insertPosition = binarySearch(nonNested, SearchCriterion
-      // .byStart(entry.getBegin()));
 
       /*
        * fail if we detect interval enclosure - of the new interval by
@@ -147,14 +145,14 @@ public class IntervalStore<T extends IntervalI>
        */
       if (insertPosition > 0)
       {
-        if (Range.encloses(nonNested.get(insertPosition - 1), entry))
+        if (nonNested.get(insertPosition - 1).properlyContainsInterval(entry))
         {
           return false;
         }
       }
       if (insertPosition < nonNested.size())
       {
-        if (Range.encloses(entry, nonNested.get(insertPosition)))
+        if (entry.properlyContainsInterval(nonNested.get(insertPosition)))
         {
           return false;
         }

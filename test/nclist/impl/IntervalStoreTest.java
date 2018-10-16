@@ -419,6 +419,6 @@ public class IntervalStoreTest
     add(store, 22, 28);
     add(store, 24, 26);
     assertEquals(store.toString(),
-            "[20:30:desc, 25:35:desc]\n[22:28:desc [22:28:desc [24:26:desc]]]");
+            "[20:30:desc, 25:35:desc]\n[22:28:desc [24:26:desc], 22:28:desc]");
   }
 }

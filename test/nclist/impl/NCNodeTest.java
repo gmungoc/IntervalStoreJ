@@ -85,7 +85,7 @@ public class NCNodeTest
    * Tests for the contains method (uses entry.equals() test)
    */
   @Test(groups = "Functional")
-  public void testContains()
+  public void testContainsInterval()
   {
     SimpleFeature sf1 = new SimpleFeature(1, 10, "desc");
     SimpleFeature sf2 = new SimpleFeature(1, 10, "desc");

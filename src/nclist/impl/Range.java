@@ -71,36 +71,4 @@ public class Range implements IntervalI
     }
     return false;
   }
-
-  /**
-   * Answers true if range1 properly encloses range2, else false. Assumes that
-   * begin <= end for both ranges.
-   * 
-   * @param range1
-   * @param range2
-   * @return
-   */
-  protected static boolean encloses(IntervalI range1, IntervalI range2)
-  {
-    int begin1 = range1.getBegin();
-    int begin2 = range2.getBegin();
-    int end1 = range1.getEnd();
-    int end2 = range2.getEnd();
-
-    if (begin1 > end1 || begin2 > end2)
-    {
-      // reverse range not supported
-      return false;
-    }
-
-    if (begin1 == begin2 && end1 > end2)
-    {
-      return true;
-    }
-    if (begin1 < begin2 && end1 >= end2)
-    {
-      return true;
-    }
-    return false;
-  }
 }

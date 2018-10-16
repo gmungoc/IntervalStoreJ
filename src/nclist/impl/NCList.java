@@ -148,7 +148,7 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
      */
     Collections.sort(ranges, RangeComparator.BY_START_POSITION);
 
-    List<IntervalI> sublists = buildSubranges(ranges);
+    List<Range> sublists = buildSubranges(ranges);
 
     /*
      * convert each subrange to an NCNode consisting of a range and
@@ -182,9 +182,9 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
    * @param ranges
    * @return
    */
-  protected List<IntervalI> buildSubranges(List<T> ranges)
+  protected List<Range> buildSubranges(List<T> ranges)
   {
-    List<IntervalI> sublists = new ArrayList<>();
+    List<Range> sublists = new ArrayList<>();
 
     if (ranges.isEmpty())
     {
@@ -192,30 +192,24 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
     }
 
     int listStartIndex = 0;
-    // long lastEndPos = Long.MAX_VALUE;
 
     IntervalI lastParent = ranges.get(0);
-    int lastParentStart = lastParent.getBegin();
-    int lastParentEnd = lastParent.getEnd();
+    boolean first = true;
 
     for (int i = 0; i < ranges.size(); i++)
     {
       IntervalI nextInterval = ranges.get(i);
-      int nextStart = nextInterval.getBegin();
-      int nextEnd = nextInterval.getEnd();
-      // if (nextStart > lastEndPos || nextEnd > lastEndPos)
-      if (nextStart < lastParentStart || nextEnd > lastParentEnd)
+      if (!first && !lastParent.properlyContainsInterval(nextInterval))
       {
         /*
-         * this interval is not contained in the parent; 
+         * this interval is not properly contained in the parent; 
          * close off the last sublist
          */
         sublists.add(new Range(listStartIndex, i - 1));
         listStartIndex = i;
-        lastParentStart = nextStart;
-        lastParentEnd = nextEnd;
+        lastParent = nextInterval;
       }
-      // lastEndPos = nextEnd;
+      first = false;
     }
 
     sublists.add(new Range(listStartIndex, ranges.size() - 1));
@@ -228,7 +222,7 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
    * @param entry
    */
   @Override
-  public boolean add(T entry)
+  public synchronized boolean add(T entry)
   {
     size++;
     final long start = entry.getBegin();
@@ -236,10 +230,11 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
 
     /*
      * cases:
-     * - precedes all subranges: add as NCNode on front of list
-     * - follows all subranges: add as NCNode on end of list
-     * - enclosed by a subrange - add recursively to subrange
-     * - encloses one or more subranges - push them inside it
+     * - precedes all subranges - add as NCNode on front of list
+     * - follows all subranges - add as NCNode on end of list
+     * - matches a subrange - add as a sibling in the list
+     * - properly enclosed by a subrange - add recursively to subrange
+     * - properly encloses one or more subranges - push them inside it
      * - spans two subranges - insert between them
      */
 
@@ -269,6 +264,15 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
     {
       NCNode<T> subrange = subranges.get(j);
 
+      if (subrange.equalsInterval(entry))
+      {
+        /*
+         * matching interval - insert adjacent
+         */
+        subranges.add(j, new NCNode<>(entry));
+        return true;
+      }
+
       if (end < subrange.getBegin() && !overlapping && !enclosing)
       {
         /*
@@ -278,7 +282,8 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
         return true;
       }
 
-      if (subrange.getBegin() <= start && subrange.getEnd() >= end)
+      // if (subrange.getBegin() <= start && subrange.getEnd() >= end)
+      if (subrange.properlyContainsInterval(entry))
       {
         /*
          * push new entry inside this subrange as it encloses it
@@ -583,15 +588,17 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
                   + " starts before " + lastRange.toString());
           return false;
         }
-        if (subrange.getBegin() == lastRange.getBegin()
-                && subrange.getEnd() > lastRange.getEnd())
+        if (subrange.properlyContainsInterval(lastRange))
+        // subrange.getBegin() == lastRange.getBegin()
+        // && subrange.getEnd() > lastRange.getEnd())
         {
           System.err.println("error in NCList: range " + subrange.toString()
                   + " encloses preceding: " + lastRange.toString());
           return false;
         }
-        if (subrange.getBegin() >= lastRange.getBegin()
-                && subrange.getEnd() <= lastRange.getEnd())
+        if (lastRange.properlyContainsInterval(subrange))
+        // subrange.getBegin() >= lastRange.getBegin()
+        // && subrange.getEnd() <= lastRange.getEnd())
         {
           System.err.println("error in NCList: range " + subrange.toString()
                   + " enclosed by preceding: " + lastRange.toString());

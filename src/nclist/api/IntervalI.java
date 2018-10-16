@@ -25,4 +25,35 @@ public interface IntervalI
   int getBegin();
 
   int getEnd();
+
+  /**
+   * Answers true if this interval contains (or matches) the given interval
+   * 
+   * @param i
+   * @return
+   */
+  default boolean containsInterval(IntervalI i)
+  {
+    return i != null
+            && i.getBegin() >= getBegin() && i.getEnd() <= getEnd();
+  }
+
+  /**
+   * Answers true if this interval properly contains the given interval, that
+   * is, it contains it and is larger than it
+   * 
+   * @param i
+   * @return
+   */
+  default boolean properlyContainsInterval(IntervalI i)
+  {
+    return containsInterval(i)
+            && (i.getBegin() > getBegin() || i.getEnd() < getEnd());
+  }
+
+  default boolean equalsInterval(IntervalI i)
+  {
+    return i != null && i.getBegin() == getBegin()
+            && i.getEnd() == getEnd();
+  }
 }
