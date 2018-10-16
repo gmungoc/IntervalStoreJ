@@ -73,8 +73,8 @@ public class BinarySearcher
 
   /**
    * Performs a binary search of the (sorted) list to find the index of the
-   * first entry which returns true for the given comparator function. Returns
-   * the length of the list if there is no such entry.
+   * first entry which satisfies the given comparator function. Returns the
+   * length of the list if there is no such entry.
    * 
    * @param intervals
    * @param sc

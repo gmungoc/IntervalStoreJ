@@ -8,12 +8,9 @@ import static org.testng.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
 
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import junit.extensions.PA;
@@ -21,18 +18,13 @@ import nclist.api.IntervalI;
 
 public class NCListTest
 {
-
-  private Random random = new Random(107);
-
-  private Comparator<IntervalI> sorter = new RangeComparator(true);
-
   /**
    * A basic sanity test of the constructor
    */
   @Test(groups = "Functional")
   public void testConstructor()
   {
-    List<Range> ranges = new ArrayList<Range>();
+    List<Range> ranges = new ArrayList<>();
     ranges.add(new Range(20, 20));
     ranges.add(new Range(10, 20));
     ranges.add(new Range(15, 30));
@@ -41,13 +33,13 @@ public class NCListTest
     ranges.add(new Range(10, 20));
     ranges.add(new Range(1, 100));
 
-    NCList<Range> ncl = new NCList<Range>(ranges);
-    String expected = "[1-100 [10-30 [10-20 [10-20 [11-19]]]], 15-30 [20-20]]";
+    NCList<Range> ncl = new NCList<>(ranges);
+    String expected = "[1-100 [10-30 [10-20 [10-20 [11-19]], 15-30 [20-20]]]]";
     assertEquals(ncl.toString(), expected);
     assertTrue(ncl.isValid());
 
     Collections.reverse(ranges);
-    ncl = new NCList<Range>(ranges);
+    ncl = new NCList<>(ranges);
     assertEquals(ncl.toString(), expected);
     assertTrue(ncl.isValid());
   }
@@ -153,269 +145,6 @@ public class NCListTest
     ncl.add(new Range(40, 65));
     assertEquals(ncl.toString(), "[20-40, 30-50, 40-65, 60-70]");
     assertTrue(ncl.isValid());
-  }
-
-  /**
-   * Provides the scales for pseudo-random NCLists i.e. the range of the maximal
-   * [0-scale] interval to be stored
-   * 
-   * @return
-   */
-  @DataProvider(name = "scalesOfLife")
-  public Object[][] getScales()
-  {
-    return new Object[][] { new Integer[] { 10 }, new Integer[] { 100 } };
-  }
-
-  /**
-   * Do a number of pseudo-random (reproducible) builds of an NCList, to
-   * exercise as many methods of the class as possible while generating the
-   * range of possible structure topologies
-   * <ul>
-   * <li>verify that add adds an entry and increments size</li>
-   * <li>...except where the entry is already contained (by equals test)</li>
-   * <li>verify that the structure is valid at all stages of construction</li>
-   * <li>generate, run and verify a range of overlap queries</li>
-   * <li>tear down the structure by deleting entries, verifying correctness at
-   * each stage</li>
-   * </ul>
-   */
-  @Test(groups = "Functional", dataProvider = "scalesOfLife")
-  public void test_pseudoRandom(Integer scale)
-  {
-    NCList<SimpleFeature> ncl = new NCList<>();
-    List<SimpleFeature> features = new ArrayList<SimpleFeature>(
-            scale);
-
-    testAdd_pseudoRandom(scale, ncl, features);
-
-    /*
-     * sort the list of added ranges - this doesn't affect the test,
-     * just makes it easier to inspect the data in the debugger
-     */
-    Collections.sort(features, sorter);
-
-    testFindOverlaps_pseudoRandom(ncl, scale, features);
-
-    testDelete_pseudoRandom(ncl, features);
-  }
-
-  /**
-   * Pick randomly selected entries to delete in turn, checking the NCList size
-   * and validity at each stage, until it is empty
-   * 
-   * @param ncl
-   * @param features
-   */
-  protected void testDelete_pseudoRandom(NCList<SimpleFeature> ncl,
-          List<SimpleFeature> features)
-  {
-    int deleted = 0;
-
-    while (!features.isEmpty())
-    {
-      assertEquals(ncl.size(), features.size());
-      int toDelete = random.nextInt(features.size());
-      SimpleFeature entry = features.get(toDelete);
-      assertTrue(ncl.contains(entry),
-              String.format("NCList doesn't contain entry [%d] '%s'!",
-                      deleted, entry.toString()));
-
-      ncl.remove(entry);
-      assertFalse(ncl.contains(entry),
-              String.format(
-                      "NCList still contains deleted entry [%d] '%s'!",
-                      deleted, entry.toString()));
-      features.remove(toDelete);
-      deleted++;
-
-      assertTrue(ncl.isValid(), String.format(
-              "NCList invalid after %d deletions, last deleted was '%s'",
-              deleted, entry.toString()));
-
-      /*
-       * brute force check that deleting one entry didn't delete any others
-       */
-      for (int i = 0; i < features.size(); i++)
-      {
-        SimpleFeature sf = features.get(i);
-        assertTrue(ncl.contains(sf), String.format(
-                "NCList doesn't contain entry [%d] %s after deleting '%s'!",
-                i, sf.toString(), entry.toString()));
-      }
-    }
-    assertEquals(ncl.size(), 0); // all gone
-  }
-
-  /**
-   * Randomly generate entries and add them to the NCList, checking its validity
-   * and size at each stage. A few entries should be duplicates (by equals test)
-   * so not get added.
-   * 
-   * @param scale
-   * @param ncl
-   * @param features
-   */
-  protected void testAdd_pseudoRandom(Integer scale,
-          NCList<SimpleFeature> ncl, List<SimpleFeature> features)
-  {
-    int count = 0;
-    final int size = 50;
-
-    for (int i = 0; i < size; i++)
-    {
-      int r1 = random.nextInt(scale + 1);
-      int r2 = random.nextInt(scale + 1);
-      int from = Math.min(r1, r2);
-      int to = Math.max(r1, r2);
-
-      /*
-       * choice of two feature types means that occasionally an identical
-       * feature may be generated, in which case it should not be added 
-       */
-      String desc = i % 2 == 0 ? "Pfam" : "Cath";
-      SimpleFeature feature = new SimpleFeature(from, to, desc);
-
-      /*
-       * add to NCList - with duplicate entries (by equals) disallowed
-       */
-      if (features.contains(feature))
-      {
-        assertTrue(ncl.contains(feature));
-        System.out.println(
-                "Duplicate feature generated " + feature.toString());
-      }
-      else
-      {
-        ncl.add(feature);
-        features.add(feature);
-        count++;
-      }
-
-      /*
-       * check list format is valid at each stage of its construction
-       */
-      assertTrue(ncl.isValid(),
-              String.format("Failed for scale = %d, i=%d", scale, i));
-      assertEquals(ncl.size(), count);
-    }
-    // System.out.println(ncl.prettyPrint());
-  }
-
-  /**
-   * A helper method that generates pseudo-random range queries and veries that
-   * findOverlaps returns the correct matches
-   * 
-   * @param ncl
-   *          the NCList to query
-   * @param scale
-   *          ncl maximal range is [0, scale]
-   * @param features
-   *          a list of the ranges stored in ncl
-   */
-  protected void testFindOverlaps_pseudoRandom(NCList<SimpleFeature> ncl,
-          int scale, List<SimpleFeature> features)
-  {
-    int halfScale = scale / 2;
-    int minIterations = 20;
-
-    /*
-     * generates ranges in [-halfScale, scale+halfScale]
-     * - some should be internal to [0, scale] P = 1/4
-     * - some should lie before 0 P = 1/16
-     * - some should lie after scale P = 1/16
-     * - some should overlap left P = 1/4
-     * - some should overlap right P = 1/4
-     * - some should enclose P = 1/8
-     * 
-     * 50 iterations give a 96% probability of including the
-     * unlikeliest case; keep going until we have done all!
-     */
-    boolean inside = false;
-    boolean enclosing = false;
-    boolean before = false;
-    boolean after = false;
-    boolean overlapLeft = false;
-    boolean overlapRight = false;
-    boolean allCasesCovered = false;
-
-    int i = 0;
-    while (i < minIterations || !allCasesCovered)
-    {
-      i++;
-      int r1 = random.nextInt((scale + 1) * 2);
-      int r2 = random.nextInt((scale + 1) * 2);
-      int from = Math.min(r1, r2) - halfScale;
-      int to = Math.max(r1, r2) - halfScale;
-
-      /*
-       * ensure all cases of interest get covered
-       */
-      inside |= from >= 0 && to <= scale;
-      enclosing |= from <= 0 && to >= scale;
-      before |= to < 0;
-      after |= from > scale;
-      overlapLeft |= from < 0 && to >= 0 && to <= scale;
-      overlapRight |= from >= 0 && from <= scale && to > scale;
-      if (!allCasesCovered)
-      {
-        allCasesCovered |= inside && enclosing && before && after
-                && overlapLeft && overlapRight;
-        if (allCasesCovered)
-        {
-          System.out.println(String.format(
-                  "Covered all findOverlaps cases after %d iterations for scale %d",
-                  i, scale));
-        }
-      }
-
-      verifyFindOverlaps(ncl, from, to, features);
-    }
-  }
-
-  /**
-   * A helper method that verifies that overlaps found by interrogating an
-   * NCList correctly match those found by brute force search
-   * 
-   * @param ncl
-   * @param from
-   * @param to
-   * @param features
-   */
-  protected void verifyFindOverlaps(NCList<SimpleFeature> ncl, int from,
-          int to, List<SimpleFeature> features)
-  {
-    List<SimpleFeature> overlaps = ncl.findOverlaps(from, to);
-
-    /*
-     * check returned entries do indeed overlap from-to range
-     */
-    for (IntervalI sf : overlaps)
-    {
-      int begin = sf.getBegin();
-      int end = sf.getEnd();
-      assertTrue(begin <= to && end >= from,
-              String.format(
-                      "[%d, %d] does not overlap query range [%d, %d]",
-                      begin, end, from, to));
-    }
-
-    /*
-     * check overlapping ranges are included in the results
-     * (the test above already shows non-overlapping ranges are not)
-     */
-    for (IntervalI sf : features)
-    {
-      int begin = sf.getBegin();
-      int end = sf.getEnd();
-      if (begin <= to && end >= from)
-      {
-        boolean found = overlaps.contains(sf);
-        assertTrue(found,
-                String.format("[%d, %d] missing in query range [%d, %d]",
-                        begin, end, from, to));
-      }
-    }
   }
 
   @Test(groups = "Functional")
@@ -621,8 +350,8 @@ public class NCListTest
     NCList<Range> ncl = new NCList<Range>(ranges);
     assertTrue(ncl.isValid());
     assertEquals(ncl.toString(),
-            "[40-50 [40-45], 41-46 [42-42 [42-42]], 45-55]");
-    String expected = "40-50\n  40-45\n41-46\n  42-42\n    42-42\n45-55\n";
+            "[40-50 [40-45, 41-46 [42-42 [42-42]]], 45-55]");
+    String expected = "40-50\n  40-45\n  41-46\n    42-42\n      42-42\n45-55\n";
     assertEquals(ncl.prettyPrint(), expected);
 
     /*
@@ -643,37 +372,6 @@ public class NCListTest
             "[40-50 [40-45 [42-42 [42-42]], 41-46], 45-55]");
     expected = "40-50\n  40-45\n    42-42\n      42-42\n  41-46\n45-55\n";
     assertEquals(ncl.prettyPrint(), expected);
-  }
-
-  /**
-   * A test that shows different valid trees can be constructed from the same
-   * set of ranges, depending on the order of construction
-   */
-  @Test(groups = "Functional")
-  public void testConstructor_alternativeTrees()
-  {
-    List<Range> ranges = new ArrayList<Range>();
-    ranges.add(new Range(10, 60));
-    ranges.add(new Range(20, 30));
-    ranges.add(new Range(40, 50));
-
-    /*
-     * constructor with greedy traversal of sorted ranges to build nested
-     * containment lists results in 20-30 inside 10-60, 40-50 a sibling
-     */
-    NCList<Range> ncl = new NCList<Range>(ranges);
-    assertEquals(ncl.toString(), "[10-60 [20-30], 40-50]");
-    assertTrue(ncl.isValid());
-
-    /*
-     * adding ranges one at a time results in 40-50 
-     * a sibling of 20-30 inside 10-60
-     */
-    ncl = new NCList<Range>(new Range(10, 60));
-    ncl.add(new Range(20, 30));
-    ncl.add(new Range(40, 50));
-    assertEquals(ncl.toString(), "[10-60 [20-30, 40-50]]");
-    assertTrue(ncl.isValid());
   }
 
   /**
@@ -851,19 +549,19 @@ public class NCListTest
   
     /*
      * construct NCList with all intervals (sort and build)
-     * results in a wide, nearly flat tree (width = 5, depth = 2)
+     * results in a tree mostly nested under [2-9]
      */
     List<Range> all = new ArrayList<>(fromLeft);
     all.addAll(fromRight);
     NCList<Range> ncl1 = new NCList<>(all);
     assertTrue(ncl1.isValid());
-    assertEquals(ncl1.getDepth(), 2);
-    String flat = "[1-8, 2-9 [2-7], 3-8 [3-6], 4-7 [4-5], 5-6]";
-    assertEquals(ncl1.toString(), flat);
+    assertEquals(ncl1.getDepth(), 4);
+    String deepRight = "[1-8, 2-9 [2-7, 3-8 [3-6, 4-7 [4-5, 5-6]]]]";
+    assertEquals(ncl1.toString(), deepRight);
 
     /*
      * add intervals small to large in pairs, fromLeft then fromRight
-     * - results in a deeply nested tree under [1-8]
+     * results in a tree mostly nested under [1-8]
      */
     NCList<Range> ncl2 = new NCList<>();
     int j = fromLeft.size();
@@ -903,7 +601,6 @@ public class NCListTest
     }
     assertTrue(ncl4.isValid());
     assertEquals(ncl4.getDepth(), 4);
-    String deepRight = "[1-8, 2-9 [2-7, 3-8 [3-6, 4-7 [4-5, 5-6]]]]";
     assertEquals(ncl4.toString(), deepRight);
 
     /*
@@ -922,62 +619,6 @@ public class NCListTest
     assertEquals(ncl5.getDepth(), 4);
     String balanced = "[1-8 [2-7 [3-6 [4-5]]], 2-9 [3-8 [4-7 [5-6]]]]";
     assertEquals(ncl5.toString(), balanced);
-
-    /*
-     * now repeat for large N to show the wide range of depths possible
-     */
-    N = 100;
-    fromLeft.clear();
-    fromRight.clear();
-    leftStart = 1;
-    leftEnd = N;
-    while (leftStart <= leftEnd)
-    {
-      fromLeft.add(new Range(leftStart, leftEnd));
-      fromRight.add(new Range(leftStart + 1, leftEnd + 1));
-      leftStart++;
-      leftEnd--;
-    }
-
-    /*
-     * construct NCList with all intervals (sort and build)
-     */
-    all = new ArrayList<>(fromLeft);
-    all.addAll(fromRight);
-    NCList<Range> ncl6 = new NCList<>(all);
-    assertEquals(ncl6.getDepth(), 2);
-
-    /*
-     * add intervals large to small, fromLeft then fromRight
-     * results in a deeply nested tree
-     */
-    NCList<Range> ncl7 = new NCList<>();
-    j = fromLeft.size();
-    for (int i = 0; i < j; i++)
-    {
-      ncl7.add(fromLeft.get(i));
-    }
-    for (int i = 0; i < j; i++)
-    {
-      ncl7.add(fromRight.get(i));
-    }
-    assertTrue(ncl7.isValid());
-    assertEquals(ncl7.getDepth(), 50);
-
-    /*
-     * add all fromRight intervals, then all fromLeft (large to small)
-     */
-    NCList<Range> ncl8 = new NCList<>();
-    for (int i = 0; i < j; i++)
-    {
-      ncl8.add(fromRight.get(i));
-    }
-    for (int i = 0; i < j; i++)
-    {
-      ncl8.add(fromLeft.get(i));
-    }
-    assertTrue(ncl8.isValid());
-    assertEquals(ncl8.getDepth(), 50);
   }
 
   @Test(groups = "Functional")
@@ -1002,5 +643,38 @@ public class NCListTest
     assertSame(it.next(), r2);
     assertSame(it.next(), r4);
     assertFalse(it.hasNext());
+  }
+
+  @Test(groups = "Functional")
+  public void testFindFirstOverlap()
+  {
+    List<Range> ranges = new ArrayList<>();
+    addRange(ranges, 1, 40);
+    addRange(ranges, 10, 20);
+    addRange(ranges, 15, 30);
+    addRange(ranges, 50, 60);
+
+    NCList<Range> ncl = new NCList<>(ranges);
+    String expected = "[1-40 [10-20, 15-30], 50-60]";
+    assertEquals(ncl.toString(), expected);
+    assertTrue(ncl.isValid());
+
+    int j = ncl.findFirstOverlap(35);
+    assertEquals(j, 0, "findFirstOverlap for " + 35);
+  }
+
+  /**
+   * A helper method that constructs a Range and adds it to a list
+   * 
+   * @param l
+   * @param from
+   * @param to
+   * @return
+   */
+  private Range addRange(List<Range> l, int from, int to)
+  {
+    Range r = new Range(from, to);
+    l.add(r);
+    return r;
   }
 }

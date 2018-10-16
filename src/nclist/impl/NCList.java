@@ -192,23 +192,30 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
     }
 
     int listStartIndex = 0;
-    long lastEndPos = Long.MAX_VALUE;
+    // long lastEndPos = Long.MAX_VALUE;
+
+    IntervalI lastParent = ranges.get(0);
+    int lastParentStart = lastParent.getBegin();
+    int lastParentEnd = lastParent.getEnd();
 
     for (int i = 0; i < ranges.size(); i++)
     {
       IntervalI nextInterval = ranges.get(i);
-      long nextStart = nextInterval.getBegin();
-      long nextEnd = nextInterval.getEnd();
-      if (nextStart > lastEndPos || nextEnd > lastEndPos)
+      int nextStart = nextInterval.getBegin();
+      int nextEnd = nextInterval.getEnd();
+      // if (nextStart > lastEndPos || nextEnd > lastEndPos)
+      if (nextStart < lastParentStart || nextEnd > lastParentEnd)
       {
         /*
-         * this interval is not contained in the preceding one 
+         * this interval is not contained in the parent; 
          * close off the last sublist
          */
         sublists.add(new Range(listStartIndex, i - 1));
         listStartIndex = i;
+        lastParentStart = nextStart;
+        lastParentEnd = nextEnd;
       }
-      lastEndPos = nextEnd;
+      // lastEndPos = nextEnd;
     }
 
     sublists.add(new Range(listStartIndex, ranges.size() - 1));
@@ -474,25 +481,8 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
    */
   protected int findFirstOverlap(long from)
   {
-    /*
-     * The NCList paper describes binary search for this step,
-     * but this not implemented here as it seems to imply complications
-     * for adding to an NCList, and we expect these lists to be short
-     */
-
-    int i = 0;
-    if (subranges != null)
-    {
-      for (NCNode<T> subrange : subranges)
-      {
-        if (subrange.getEnd() >= from)
-        {
-          return i;
-        }
-        i++;
-      }
-    }
-    return -1;
+    return BinarySearcher.binarySearch(subranges,
+            BinarySearcher.byEnd(from));
   }
 
   /**
@@ -558,7 +548,8 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
    * NCList bounded within the given start-end range, else false.
    * <p>
    * Each subrange must lie within start-end (inclusive). Subranges must be
-   * ordered by start position ascending.
+   * ordered by start position ascending, and within that by end position
+   * descending.
    * <p>
    * 
    * @param start
@@ -567,13 +558,14 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
    */
   boolean isValid(final int start, final int end)
   {
-    int lastStart = start;
+    NCNode<T> lastRange = null;
+
     for (NCNode<T> subrange : subranges)
     {
-      if (subrange.getBegin() < lastStart)
+      if (subrange.getBegin() < start)
       {
         System.err.println("error in NCList: range " + subrange.toString()
-                + " starts before " + lastStart);
+                + " starts before " + end);
         return false;
       }
       if (subrange.getEnd() > end)
@@ -582,7 +574,31 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
                 + " ends after " + end);
         return false;
       }
-      lastStart = subrange.getBegin();
+
+      if (lastRange != null)
+      {
+        if (subrange.getBegin() < lastRange.getBegin())
+        {
+          System.err.println("error in NCList: range " + subrange.toString()
+                  + " starts before " + lastRange.toString());
+          return false;
+        }
+        if (subrange.getBegin() == lastRange.getBegin()
+                && subrange.getEnd() > lastRange.getEnd())
+        {
+          System.err.println("error in NCList: range " + subrange.toString()
+                  + " encloses preceding: " + lastRange.toString());
+          return false;
+        }
+        if (subrange.getBegin() >= lastRange.getBegin()
+                && subrange.getEnd() <= lastRange.getEnd())
+        {
+          System.err.println("error in NCList: range " + subrange.toString()
+                  + " enclosed by preceding: " + lastRange.toString());
+          return false;
+        }
+      }
+      lastRange = subrange;
 
       if (!subrange.isValid())
       {
@@ -704,12 +720,6 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
     return subDepth;
   }
 
-  /**
-   * Answers a depth-first iterator over the elements in the NCList. Note that
-   * the element order is not specified (and may vary depending on the order of
-   * construction of the NCList). The iterator does not support the optional
-   * <code>remove</code> operation.
-   */
   @Override
   public Iterator<T> iterator()
   {
