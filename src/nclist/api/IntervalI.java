@@ -56,4 +56,21 @@ public interface IntervalI
     return i != null && i.getBegin() == getBegin()
             && i.getEnd() == getEnd();
   }
+
+  default boolean overlapsInterval(IntervalI i)
+  {
+    if (i == null)
+    {
+      return false;
+    }
+    if (i.getBegin() < getBegin())
+    {
+      return i.getEnd() >= getBegin();
+    }
+    if (i.getEnd() > getEnd())
+    {
+      return i.getBegin() <= getEnd();
+    }
+    return true; // i internal to this
+  }
 }

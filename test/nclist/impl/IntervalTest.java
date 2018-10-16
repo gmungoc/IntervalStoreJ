@@ -55,4 +55,21 @@ public class IntervalTest
     assertFalse(i1.equalsInterval(new Range(10, 21)));
     assertFalse(i1.equalsInterval(null));
   }
+
+  @Test(groups = "Functional")
+  public void testOverlapsInterval()
+  {
+    IntervalI i1 = new Range(10, 20);
+    assertTrue(i1.overlapsInterval(i1));
+    assertTrue(i1.overlapsInterval(new Range(5, 10)));
+    assertTrue(i1.overlapsInterval(new Range(5, 15)));
+    assertTrue(i1.overlapsInterval(new Range(12, 18)));
+    assertTrue(i1.overlapsInterval(new Range(15, 30)));
+    assertTrue(i1.overlapsInterval(new Range(20, 30)));
+    assertTrue(i1.overlapsInterval(new Range(1, 100)));
+
+    assertFalse(i1.overlapsInterval(null));
+    assertFalse(i1.overlapsInterval(new Range(1, 9)));
+    assertFalse(i1.overlapsInterval(new Range(21, 21)));
+  }
 }
