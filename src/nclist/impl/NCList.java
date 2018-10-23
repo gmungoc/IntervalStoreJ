@@ -745,4 +745,11 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
   {
     return new NCListIterator();
   }
+
+  @Override
+  public synchronized void clear()
+  {
+    subranges.clear();
+    size = 0;
+  }
 }

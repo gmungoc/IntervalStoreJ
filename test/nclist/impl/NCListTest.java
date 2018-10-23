@@ -699,11 +699,23 @@ public class NCListTest
   @Test(groups = "Functional")
   public void testRemove_withPromotion()
   {
+    /*
+     * a simple example
+     */
     NCList<Range> ncl = new NCList<>();
+    ncl.add(new Range(10, 30));
+    ncl.add(new Range(20, 30));
+    ncl.add(new Range(20, 40));
+    assertTrue(ncl.isValid());
+    assertEquals(ncl.toString(), "[10-30 [20-30], 20-40]");
+    ncl.remove(new Range(10, 30));
+    assertEquals(ncl.toString(), "[20-40 [20-30]]");
+    assertTrue(ncl.isValid());
 
     /*
      * add intervals in a cunningly designed order...
      */
+    ncl.clear();
     ncl.add(new Range(20, 60));
     ncl.add(new Range(35, 55));
     ncl.add(new Range(40, 40));
