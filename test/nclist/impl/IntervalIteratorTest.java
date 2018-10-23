@@ -10,7 +10,7 @@ import org.testng.annotations.Test;
 
 public class IntervalIteratorTest
 {
-  @Test
+  @Test(groups = "Functional")
   public void testNext()
   {
     IntervalStore<Range> store = new IntervalStore<>();

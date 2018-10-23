@@ -109,7 +109,7 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
   }
 
   /*
-   * the number of ranges represented
+   * the number of interval instances represented
    */
   private int size;
 
@@ -156,7 +156,7 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
      */
     for (IntervalI sublist : sublists)
     {
-      subranges.add(new NCNode<T>(
+      subranges.add(new NCNode<>(
               ranges.subList(sublist.getBegin(), sublist.getEnd() + 1)));
     }
 
@@ -172,7 +172,7 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
 
   public NCList()
   {
-    subranges = new ArrayList<NCNode<T>>();
+    subranges = new ArrayList<>();
   }
 
   /**
@@ -222,20 +222,36 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
    * @param entry
    */
   @Override
-  public synchronized boolean add(T entry)
+  public synchronized boolean add(final T entry)
   {
+    final NCNode<T> newNode = new NCNode<>(entry);
+    addNode(newNode);
     size++;
-    final long start = entry.getBegin();
-    final long end = entry.getEnd();
+    return true;
+  }
+
+  /**
+   * Adds one NCNode to this NCList
+   * <p>
+   * This method does not update the <code>size</code> (interval count) of this
+   * NCList, as it may be used to rearrange nodes without changing their count.
+   * Callers should increment the count if needed.
+   * 
+   * @param newNode
+   */
+  protected void addNode(final NCNode<T> newNode)
+  {
+    final long start = newNode.getBegin();
+    final long end = newNode.getEnd();
 
     /*
      * cases:
-     * - precedes all subranges - add as NCNode on front of list
-     * - follows all subranges - add as NCNode on end of list
-     * - matches a subrange - add as a sibling in the list
-     * - properly enclosed by a subrange - add recursively to subrange
-     * - properly encloses one or more subranges - push them inside it
-     * - spans two subranges - insert between them
+     * 1) precedes all subranges - add as NCNode on front of list
+     * 2) follows all subranges - add as NCNode on end of list
+     * 3) matches a subrange - add as a sibling in the list
+     * 4) properly enclosed by a subrange - add recursively to subrange
+     * 5) properly encloses one or more subranges - push them inside it
+     * 6) spans two subranges - insert between them
      */
 
     /*
@@ -247,8 +263,8 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
       /*
        * all subranges precede this one - add it on the end
        */
-      subranges.add(new NCNode<>(entry));
-      return true;
+      subranges.add(newNode);
+      return;
     }
 
     /*
@@ -264,13 +280,13 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
     {
       NCNode<T> subrange = subranges.get(j);
 
-      if (subrange.equalsInterval(entry))
+      if (subrange.equalsInterval(newNode))
       {
         /*
          * matching interval - insert adjacent
          */
-        subranges.add(j, new NCNode<>(entry));
-        return true;
+        subranges.add(j, newNode);
+        return;
       }
 
       if (end < subrange.getBegin() && !overlapping && !enclosing)
@@ -278,18 +294,17 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
         /*
          * new entry lies between subranges j-1 j
          */
-        subranges.add(j, new NCNode<>(entry));
-        return true;
+        subranges.add(j, newNode);
+        return;
       }
 
-      // if (subrange.getBegin() <= start && subrange.getEnd() >= end)
-      if (subrange.properlyContainsInterval(entry))
+      if (subrange.properlyContainsInterval(newNode))
       {
         /*
          * push new entry inside this subrange as it encloses it
          */
-        subrange.add(entry);
-        return true;
+        subrange.addNode(newNode);
+        return;
       }
 
       if (start <= subrange.getBegin())
@@ -318,7 +333,7 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
             /*
              * entry encloses one or more preceding subranges
              */
-            addEnclosingRange(entry, firstEnclosed, lastEnclosed);
+            push(newNode, firstEnclosed, lastEnclosed);
           }
           else
           {
@@ -326,9 +341,9 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
              * entry overlaps two subranges but doesn't enclose either
              * so just add it 
              */
-            subranges.add(j, new NCNode<>(entry));
+            subranges.add(j, newNode);
           }
-          return true;
+          return;
         }
       }
       else
@@ -343,13 +358,12 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
      */
     if (enclosing)
     {
-      addEnclosingRange(entry, firstEnclosed, lastEnclosed);
+      push(newNode, firstEnclosed, lastEnclosed);
     }
     else
     {
-      subranges.add(new NCNode<>(entry));
+      subranges.add(newNode);
     }
-    return true;
   }
 
   @Override
@@ -393,34 +407,35 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
   }
 
   /**
-   * Update the tree so that the range of the new entry encloses subranges i to
-   * j (inclusive). That is, replace subranges i-j (inclusive) with a new
-   * subrange that contains them.
+   * Update the tree so that the new node encloses current subranges i to j
+   * (inclusive). That is, replace subranges i-j (inclusive) with a new subrange
+   * that contains them.
    * 
-   * @param entry
+   * @param node
    * @param i
    * @param j
+   * @throws IllegalArgumentException
+   *           if any of the subranges is not contained by the node's start-end
+   *           range
    */
-  protected synchronized void addEnclosingRange(T entry, final int i,
+  protected synchronized void push(NCNode<T> node, final int i,
           final int j)
   {
-    NCList<T> newNCList = new NCList<>();
-    newNCList.addNodes(subranges.subList(i, j + 1));
-    NCNode<T> newNode = new NCNode<>(entry, newNCList);
+    for (int k = i; k <= j; k++)
+    {
+      NCNode<T> n = subranges.get(k);
+      if (!node.containsInterval(n)) {
+        throw new IllegalArgumentException("Can't push " + n.toString()
+                + " inside " + node.toString());
+      }
+      node.addNode(n);
+    }
+
     for (int k = j; k >= i; k--)
     {
       subranges.remove(k);
     }
-    subranges.add(i, newNode);
-  }
-
-  protected void addNodes(List<NCNode<T>> nodes)
-  {
-    for (NCNode<T> node : nodes)
-    {
-      subranges.add(node);
-      size += node.size();
-    }
+    subranges.add(i, node);
   }
 
   /**
@@ -678,21 +693,19 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
       NCNode<T> subrange = subranges.get(i);
       NCList<T> subRegions = subrange.getSubRegions();
 
-      if (subrange.getRegion() == entry)
+      if (subrange.getRegion().equals(entry))
       {
         /*
          * if the subrange is rooted on this entry, promote its
-         * subregions (if any) to replace the subrange here;
-         * NB have to resort subranges after doing this since e.g.
-         * [10-30 [12-20 [16-18], 13-19]]
-         * after deleting 12-20, 16-18 is promoted to sibling of 13-19
-         * but should follow it in the list of subranges of 10-30 
+         * subregions (if any)  
          */
         subranges.remove(i);
         if (subRegions != null)
         {
-          subranges.addAll(i, subRegions.subranges);
-          Collections.sort(subranges, RangeComparator.BY_START_POSITION);
+          for (NCNode<T> r : subRegions.subranges)
+          {
+            addNode(r);
+          }
         }
         size--;
         return true;

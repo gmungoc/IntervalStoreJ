@@ -47,13 +47,13 @@ public class NCListTest
   @Test(groups = "Functional")
   public void testFindOverlaps()
   {
-    List<Range> ranges = new ArrayList<Range>();
+    List<Range> ranges = new ArrayList<>();
     ranges.add(new Range(20, 50));
     ranges.add(new Range(30, 70));
     ranges.add(new Range(1, 100));
     ranges.add(new Range(70, 120));
 
-    NCList<Range> ncl = new NCList<Range>(ranges);
+    NCList<Range> ncl = new NCList<>(ranges);
 
     List<Range> overlaps = ncl.findOverlaps(121, 122);
     assertEquals(overlaps.size(), 0);
@@ -74,9 +74,9 @@ public class NCListTest
   @Test(groups = "Functional")
   public void testAdd_onTheEnd()
   {
-    List<Range> ranges = new ArrayList<Range>();
+    List<Range> ranges = new ArrayList<>();
     ranges.add(new Range(20, 50));
-    NCList<Range> ncl = new NCList<Range>(ranges);
+    NCList<Range> ncl = new NCList<>(ranges);
     assertEquals(ncl.toString(), "[20-50]");
     assertTrue(ncl.isValid());
 
@@ -88,9 +88,9 @@ public class NCListTest
   @Test(groups = "Functional")
   public void testAdd_inside()
   {
-    List<Range> ranges = new ArrayList<Range>();
+    List<Range> ranges = new ArrayList<>();
     ranges.add(new Range(20, 50));
-    NCList<Range> ncl = new NCList<Range>(ranges);
+    NCList<Range> ncl = new NCList<>(ranges);
     assertEquals(ncl.toString(), "[20-50]");
     assertTrue(ncl.isValid());
 
@@ -101,9 +101,9 @@ public class NCListTest
   @Test(groups = "Functional")
   public void testAdd_onTheFront()
   {
-    List<Range> ranges = new ArrayList<Range>();
+    List<Range> ranges = new ArrayList<>();
     ranges.add(new Range(20, 50));
-    NCList<Range> ncl = new NCList<Range>(ranges);
+    NCList<Range> ncl = new NCList<>(ranges);
     assertEquals(ncl.toString(), "[20-50]");
     assertTrue(ncl.isValid());
 
@@ -115,10 +115,10 @@ public class NCListTest
   @Test(groups = "Functional")
   public void testAdd_enclosing()
   {
-    List<Range> ranges = new ArrayList<Range>();
+    List<Range> ranges = new ArrayList<>();
     ranges.add(new Range(20, 50));
     ranges.add(new Range(30, 60));
-    NCList<Range> ncl = new NCList<Range>(ranges);
+    NCList<Range> ncl = new NCList<>(ranges);
     assertEquals(ncl.toString(), "[20-50, 30-60]");
     assertTrue(ncl.isValid());
     assertEquals(ncl.getStart(), 20);
@@ -131,10 +131,10 @@ public class NCListTest
   @Test(groups = "Functional")
   public void testAdd_spanning()
   {
-    List<Range> ranges = new ArrayList<Range>();
+    List<Range> ranges = new ArrayList<>();
     ranges.add(new Range(20, 40));
     ranges.add(new Range(60, 70));
-    NCList<Range> ncl = new NCList<Range>(ranges);
+    NCList<Range> ncl = new NCList<>(ranges);
     assertEquals(ncl.toString(), "[20-40, 60-70]");
     assertTrue(ncl.isValid());
 
@@ -150,7 +150,7 @@ public class NCListTest
   @Test(groups = "Functional")
   public void testGetEntries()
   {
-    List<Range> ranges = new ArrayList<Range>();
+    List<Range> ranges = new ArrayList<>();
     Range r1 = new Range(20, 20);
     Range r2 = new Range(10, 20);
     Range r3 = new Range(15, 30);
@@ -164,7 +164,7 @@ public class NCListTest
     ranges.add(r5);
     ranges.add(r6);
 
-    NCList<Range> ncl = new NCList<Range>(ranges);
+    NCList<Range> ncl = new NCList<>(ranges);
     Range r7 = new Range(1, 100);
     ncl.add(r7);
 
@@ -178,20 +178,20 @@ public class NCListTest
     assertTrue(contents.contains(r6));
     assertTrue(contents.contains(r7));
 
-    ncl = new NCList<Range>();
+    ncl = new NCList<>();
     assertTrue(ncl.getEntries().isEmpty());
   }
 
   @Test(groups = "Functional")
   public void testRemove()
   {
-    List<Range> ranges = new ArrayList<Range>();
+    List<Range> ranges = new ArrayList<>();
     Range r1 = new Range(20, 30);
     ranges.add(r1);
-    NCList<Range> ncl = new NCList<Range>(ranges);
+    NCList<Range> ncl = new NCList<>(ranges);
     assertTrue(ncl.contains(r1));
 
-    Range r2 = new Range(20, 30);
+    Range r2 = new Range(20, 31);
     assertFalse(ncl.remove(null)); // null argument
     assertFalse(ncl.remove(r2)); // never added
     assertTrue(ncl.remove(r1)); // success
@@ -204,10 +204,9 @@ public class NCListTest
     SimpleFeature sf1 = new SimpleFeature(1, 10, "type");
     SimpleFeature sf2 = new SimpleFeature(1, 10, "type");
     features.add(sf1);
-    assertEquals(sf1, sf2); // sf1.equals(sf2)
-    assertFalse(features.remove(sf2)); // equality is not enough for deletion
-    assertTrue(features.getEntries().contains(sf1)); // still there!
-    assertTrue(features.remove(sf1));
+    assertTrue(sf1.equals(sf2));
+    assertTrue(features.remove(sf2)); // equal object deleted
+    assertFalse(features.getEntries().contains(sf1)); // deleted
     assertTrue(features.getEntries().isEmpty()); // gone now
 
     /*
@@ -228,10 +227,10 @@ public class NCListTest
   @Test(groups = "Functional")
   public void testAdd_overlapping()
   {
-    List<Range> ranges = new ArrayList<Range>();
+    List<Range> ranges = new ArrayList<>();
     ranges.add(new Range(40, 50));
     ranges.add(new Range(20, 30));
-    NCList<Range> ncl = new NCList<Range>(ranges);
+    NCList<Range> ncl = new NCList<>(ranges);
     assertEquals(ncl.toString(), "[20-30, 40-50]");
     assertTrue(ncl.isValid());
 
@@ -290,10 +289,10 @@ public class NCListTest
   @Test(groups = "Functional")
   public void testIsValid()
   {
-    List<Range> ranges = new ArrayList<Range>();
+    List<Range> ranges = new ArrayList<>();
     Range r1 = new Range(40, 50);
     ranges.add(r1);
-    NCList<Range> ncl = new NCList<Range>(ranges);
+    NCList<Range> ncl = new NCList<>(ranges);
     assertTrue(ncl.isValid());
 
     Range r2 = new Range(42, 44);
@@ -340,14 +339,14 @@ public class NCListTest
      * they are sorted then assembled into NCList subregions
      * notice that 42-42 end up inside 41-46
      */
-    List<Range> ranges = new ArrayList<Range>();
+    List<Range> ranges = new ArrayList<>();
     ranges.add(new Range(40, 50));
     ranges.add(new Range(45, 55));
     ranges.add(new Range(40, 45));
     ranges.add(new Range(41, 46));
     ranges.add(new Range(42, 42));
     ranges.add(new Range(42, 42));
-    NCList<Range> ncl = new NCList<Range>(ranges);
+    NCList<Range> ncl = new NCList<>(ranges);
     assertTrue(ncl.isValid());
     assertEquals(ncl.toString(),
             "[40-50 [40-45, 41-46 [42-42, 42-42]], 45-55]");
@@ -360,7 +359,7 @@ public class NCListTest
      * a different but equally valid NCList structure
      */
     ranges.clear();
-    ncl = new NCList<Range>(ranges);
+    ncl = new NCList<>(ranges);
     ncl.add(new Range(40, 50));
     ncl.add(new Range(45, 55));
     ncl.add(new Range(40, 45));
@@ -399,23 +398,10 @@ public class NCListTest
     assertEquals(ncl.toString(), asString);
 
     /*
-     * add features one at a time, from 'small' to 'large' 
-     * - same result
-     */
-    ncl = new NCList<>();
-    int[] order = new int[] { 5, 4, 3, 2, 1, 0 };
-    for (int i : order)
-    {
-      ncl.add(ranges.get(i));
-    }
-    assertEquals(ncl.toString(), asString);
-    assertTrue(ncl.isValid());
-
-    /*
      * add features one at a time, in mixed order - same result as previous
      */
     ncl = new NCList<>();
-    order = new int[] { 3, 0, 5, 2, 4, 1 };
+    int[] order = new int[] { 3, 0, 5, 2, 4, 1 };
     for (int i : order)
     {
       ncl.add(ranges.get(i));
@@ -424,7 +410,22 @@ public class NCListTest
     assertTrue(ncl.isValid());
 
     /*
-     * add features one at a time, from 'large' to 'small' - slightly different
+     * add features one at a time, from 'small' to 'large' 
+     * - same result apart from ordering of transcript / exon
+     */
+    ncl = new NCList<>();
+    order = new int[] { 5, 4, 3, 2, 1, 0 };
+    for (int i : order)
+    {
+      ncl.add(ranges.get(i));
+    }
+    String asString2 = "[1:205602:gene [187:90957:exon [226:90335:cds [251:260:indel [256:256:SNV]]], 187:90957:transcript]]";
+    assertEquals(ncl.toString(), asString2);
+    assertTrue(ncl.isValid());
+
+    /*
+     * add features one at a time, from 'large' to 'small'
+     * - same result as previous
      */
     ncl = new NCList<>();
     order = new int[] { 0, 1, 2, 3, 4, 5 };
@@ -432,7 +433,6 @@ public class NCListTest
     {
       ncl.add(ranges.get(i));
     }
-    String asString2 = "[1:205602:gene [187:90957:exon [226:90335:cds [251:260:indel [256:256:SNV]]], 187:90957:transcript]]";
     assertEquals(ncl.toString(), asString2);
     assertTrue(ncl.isValid());
   }
@@ -684,11 +684,105 @@ public class NCListTest
   @Test(groups = "Functional")
   public void testAdd_colocated()
   {
-    List<Range> ranges = new ArrayList<Range>();
+    List<Range> ranges = new ArrayList<>();
     ranges.add(new Range(20, 50));
     ranges.add(new Range(20, 50));
-    NCList<Range> ncl = new NCList<Range>(ranges);
+    NCList<Range> ncl = new NCList<>(ranges);
     assertEquals(ncl.toString(), "[20-50, 20-50]");
+    assertTrue(ncl.isValid());
+  }
+
+  /**
+   * Test that verifies correct NCList reorganisation after deleting an internal
+   * node
+   */
+  @Test(groups = "Functional")
+  public void testRemove_withPromotion()
+  {
+    NCList<Range> ncl = new NCList<>();
+
+    /*
+     * add intervals in a cunningly designed order...
+     */
+    ncl.add(new Range(20, 60));
+    ncl.add(new Range(35, 55));
+    ncl.add(new Range(40, 40));
+    ncl.add(new Range(30, 40));
+    ncl.add(new Range(35, 36));
+    ncl.add(new Range(1, 50));
+    ncl.add(new Range(45, 60));
+    ncl.add(new Range(40, 70));
+    assertTrue(ncl.isValid());
+    assertEquals(ncl.toString(),
+            "[1-50, 20-60 [30-40 [35-36], 35-55 [40-40], 45-60], 40-70]");
+
+    /*
+     * removing 20-60 should result in: 
+     * 30-40 and its child relocated inside 1-50
+     * 35-55 and its child inserted between 1-50 and 40-70
+     * 45-60 relocated inside 40-70
+     */
+    ncl.remove(new Range(20, 60));
+    assertEquals(ncl.toString(),
+            "[1-50 [30-40 [35-36]], 35-55 [40-40], 40-70 [45-60]]");
+    assertTrue(ncl.isValid());
+  }
+
+  /**
+   * test for the case that a promoted interval precedes all other subranges
+   * (only possible if the deleted interval is the first of its siblings)
+   */
+  @Test(groups = "Functional")
+  public void testRemove_withPromotionLeft()
+  {
+    NCList<Range> ncl = new NCList<>();
+    ncl.clear();
+    ncl.add(new Range(20, 60));
+    ncl.add(new Range(30, 50));
+    ncl.add(new Range(32, 40));
+    ncl.add(new Range(40, 50));
+    ncl.add(new Range(35, 60));
+    ncl.add(new Range(38, 55));
+    assertTrue(ncl.isValid());
+    assertEquals(ncl.toString(),
+            "[20-60 [30-50 [32-40, 40-50], 35-60 [38-55]]]");
+
+    /*
+     * delete 30-50: 
+     * child 32-40 becomes leftmost subrange
+     * child 40-50 should nest inside 35-60 
+     */
+    ncl.remove(new Range(30, 50));
+    assertEquals(ncl.toString(), "[20-60 [32-40, 35-60 [38-55 [40-50]]]]");
+    assertTrue(ncl.isValid());
+  }
+
+  /**
+   * test for the case that a promoted interval follows all other subranges
+   * (only possible if the deleted interval is the last of its siblings)
+   */
+  @Test(groups = "Functional")
+  public void testRemove_withPromotionRight()
+  {
+    NCList<Range> ncl = new NCList<>();
+    ncl.clear();
+    ncl.add(new Range(20, 60));
+    ncl.add(new Range(30, 50));
+    ncl.add(new Range(32, 40));
+    ncl.add(new Range(40, 50));
+    ncl.add(new Range(25, 40));
+    ncl.add(new Range(28, 40));
+    assertTrue(ncl.isValid());
+    assertEquals(ncl.toString(),
+            "[20-60 [25-40 [28-40], 30-50 [32-40, 40-50]]]");
+
+    /*
+     * delete 30-50: 
+     * child 32-40 should nest inside 25-40 
+     * child 40-50 becomes rightmost subrange
+     */
+    ncl.remove(new Range(30, 50));
+    assertEquals(ncl.toString(), "[20-60 [25-40 [28-40 [32-40]], 40-50]]");
     assertTrue(ncl.isValid());
   }
 }

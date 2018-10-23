@@ -39,7 +39,7 @@ public class LoadTest
    * 
    * @throws IOException
    */
-  @Test
+  @Test(groups = "Functional")
   public void testNclistDepth_variants() throws IOException
   {
     System.out.println("\ntestNclistDepth_variants: start");
@@ -87,7 +87,7 @@ public class LoadTest
    * 
    * @throws IOException
    */
-  @Test
+  @Test(groups = "Functional")
   public void testNclistDepth_genes() throws IOException
   {
     System.out.println("\ntestNclistDepth_genes: start");
@@ -153,7 +153,7 @@ public class LoadTest
           List<SimpleFeature> intervals,
           String title)
   {
-    NCList<SimpleFeature> ncl = new NCList<SimpleFeature>(
+    NCList<SimpleFeature> ncl = new NCList<>(
             intervals);
     assertTrue(ncl.isValid());
     @SuppressWarnings("unchecked")
@@ -173,7 +173,7 @@ public class LoadTest
    * 
    * @throws IOException
    */
-  @Test
+  @Test(groups = "Functional")
   public void testIntervalStoreDepth_genes() throws IOException
   {
     System.out.println("\ntestIntervalStoreDepth_genes: start");

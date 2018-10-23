@@ -14,53 +14,53 @@ import junit.extensions.PA;
 public class NCNodeTest
 {
   @Test(groups = "Functional")
-  public void testAdd()
+  public void testAddNode()
   {
     Range r1 = new Range(10, 20);
-    NCNode<Range> node = new NCNode<Range>(r1);
+    NCNode<Range> node = new NCNode<>(r1);
     assertEquals(node.getBegin(), 10);
-    Range r2 = new Range(10, 15);
-    node.add(r2);
+    NCNode<Range> n2 = new NCNode<>(new Range(10, 15));
+    node.addNode(n2);
 
-    List<Range> contents = new ArrayList<Range>();
+    List<Range> contents = new ArrayList<>();
     node.getEntries(contents);
     assertEquals(contents.size(), 2);
     assertTrue(contents.contains(r1));
-    assertTrue(contents.contains(r2));
+    assertTrue(contents.contains(n2.getRegion()));
   }
 
   @Test(
     groups = "Functional",
     expectedExceptions =
     { IllegalArgumentException.class })
-  public void testAdd_invalidRangeStart()
+  public void testAddNode_invalidRangeStart()
   {
     Range r1 = new Range(10, 20);
-    NCNode<Range> node = new NCNode<Range>(r1);
+    NCNode<Range> node = new NCNode<>(r1);
     assertEquals(node.getBegin(), 10);
-    Range r2 = new Range(9, 15);
-    node.add(r2);
+    NCNode<Range> n2 = new NCNode<>(new Range(9, 15));
+    node.addNode(n2);
   }
 
   @Test(
     groups = "Functional",
     expectedExceptions =
     { IllegalArgumentException.class })
-  public void testAdd_invalidRangeEnd()
+  public void testAddNode_invalidRangeEnd()
   {
     Range r1 = new Range(10, 20);
-    NCNode<Range> node = new NCNode<Range>(r1);
+    NCNode<Range> node = new NCNode<>(r1);
     assertEquals(node.getBegin(), 10);
-    Range r2 = new Range(12, 21);
-    node.add(r2);
+    NCNode<Range> n2 = new NCNode<>(new Range(12, 21));
+    node.addNode(n2);
   }
 
   @Test(groups = "Functional")
   public void testGetEntries()
   {
     Range r1 = new Range(10, 20);
-    NCNode<Range> node = new NCNode<Range>(r1);
-    List<Range> entries = new ArrayList<Range>();
+    NCNode<Range> node = new NCNode<>(r1);
+    List<Range> entries = new ArrayList<>();
 
     node.getEntries(entries);
     assertEquals(entries.size(), 1);
@@ -72,13 +72,13 @@ public class NCNodeTest
     assertEquals(entries.size(), 1);
     assertTrue(entries.contains(r1));
 
-    Range r2 = new Range(15, 18);
-    node.add(r2);
+    NCNode<Range> n2 = new NCNode<>(new Range(15, 18));
+    node.addNode(n2);
     entries.clear();
     node.getEntries(entries);
     assertEquals(entries.size(), 2);
     assertTrue(entries.contains(r1));
-    assertTrue(entries.contains(r2));
+    assertTrue(entries.contains(n2.getRegion()));
   }
 
   /**
@@ -109,9 +109,10 @@ public class NCNodeTest
     Range r1 = new Range(10, 20);
     Range r2 = new Range(14, 15);
     Range r3 = new Range(16, 17);
-    NCNode<Range> node = new NCNode<Range>(r1);
-    node.add(r2);
-    node.add(r3);
+
+    NCNode<Range> node = new NCNode<>(r1);
+    node.addNode(new NCNode<>(r2));
+    node.addNode(new NCNode<>(r3));
 
     /*
      * node has root range [10-20] and contains an

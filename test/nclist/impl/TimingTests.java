@@ -109,7 +109,7 @@ public class TimingTests
    * constructor
    */
   @Test(groups = "Timing", dataProvider = "intervalCount")
-  public void testLoadTiming_simplelist_load(Integer count)
+  public void testLoadTiming_simpleList_load(Integer count)
   {
     for (int i = 0; i < REPEATS; i++)
     {
@@ -127,7 +127,8 @@ public class TimingTests
   /**
    * Timing tests of loading a simple list, with intervals loaded one at a time
    */
-  @Test(groups = "Timing", dataProvider = "intervalCount")
+  // disabled by default as rather slow running, set enabled = true to run
+  @Test(groups = "Timing", dataProvider = "intervalCount", enabled = false)
   public void testLoadTiming_simplelist_loadNoDups(Integer count)
   {
     for (int i = 0; i < REPEATS; i++)
@@ -202,7 +203,8 @@ public class TimingTests
   /**
    * Timing tests of querying an NCList for overlaps
    */
-  @Test(groups = "Timing", dataProvider = "intervalCount")
+  // disabled by default as rather slow running, set enabled = true to run
+  @Test(groups = "Timing", dataProvider = "intervalCount", enabled = false)
   public void testQueryTiming_simple(Integer count)
   {
     for (int i = 0; i < REPEATS; i++)

@@ -20,7 +20,6 @@
  */
 package nclist.impl;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -95,7 +94,16 @@ class NCNode<T extends IntervalI> implements IntervalI
    */
   NCNode(List<T> ranges)
   {
-    build(ranges);
+    size = ranges.size();
+    
+    if (!ranges.isEmpty())
+    {
+      region = ranges.get(0);
+    }
+    if (ranges.size() > 1)
+    {
+      subregions = new NCList<>(ranges.subList(1, ranges.size()));
+    }
   }
 
   /**
@@ -105,33 +113,14 @@ class NCNode<T extends IntervalI> implements IntervalI
    */
   NCNode(T range)
   {
-    List<T> ranges = new ArrayList<>();
-    ranges.add(range);
-    build(ranges);
+    size = 1;
+    region = range;
   }
 
-  NCNode(T entry, NCList<T> newNCList)
+  void setSubtree(NCList<T> newNCList)
   {
-    region = entry;
     subregions = newNCList;
     size = 1 + newNCList.size();
-  }
-
-  /**
-   * @param ranges
-   */
-  protected void build(List<T> ranges)
-  {
-    size = ranges.size();
-
-    if (!ranges.isEmpty())
-    {
-      region = ranges.get(0);
-    }
-    if (ranges.size() > 1)
-    {
-      subregions = new NCList<T>(ranges.subList(1, ranges.size()));
-    }
   }
 
   @Override
@@ -201,14 +190,19 @@ class NCNode<T extends IntervalI> implements IntervalI
   }
 
   /**
-   * Add one range to this subrange
+   * Add one node to this node's subregions.
+   * <p>
+   * This method does not update the <code>size</code> (interval count) of this
+   * NCNode, as it may be used to rearrange nodes without changing their count.
+   * Callers should increment the count if needed.
    * 
    * @param entry
+   * @throws IllegalArgumentException
+   *           if the added node is not contained by the node's start-end range
    */
-  synchronized void add(T entry)
+  synchronized void addNode(NCNode<T> entry)
   {
-    if (entry.getBegin() < region.getBegin()
-            || entry.getEnd() > region.getEnd())
+    if (!region.containsInterval(entry))
     {
       throw new IllegalArgumentException(
               String.format("adding improper subrange %d-%d to range %d-%d",
@@ -217,13 +211,9 @@ class NCNode<T extends IntervalI> implements IntervalI
     }
     if (subregions == null)
     {
-      subregions = new NCList<T>(entry);
+      subregions = new NCList<>();
     }
-    else
-    {
-      subregions.add(entry);
-    }
-    size++;
+    subregions.addNode(entry);
   }
 
   /**

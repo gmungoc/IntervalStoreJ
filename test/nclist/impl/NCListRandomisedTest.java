@@ -53,7 +53,7 @@ public class NCListRandomisedTest
   public void test_pseudoRandom(Integer scale)
   {
     NCList<SimpleFeature> ncl = new NCList<>();
-    List<SimpleFeature> features = new ArrayList<SimpleFeature>(
+    List<SimpleFeature> features = new ArrayList<>(
             scale);
 
     testAdd_pseudoRandom(scale, ncl, features);
