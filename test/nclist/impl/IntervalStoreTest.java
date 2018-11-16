@@ -298,7 +298,9 @@ public class IntervalStoreTest
     SimpleFeature sf2 = new SimpleFeature(20, 40, "Cath");
     SimpleFeature sf3 = new SimpleFeature(25, 35, "Cath");
     store.add(sf1);
+    assertEquals(store.size(), 1);
     store.add(sf2);
+    assertEquals(store.size(), 2);
     store.add(sf3);
     assertEquals(store.size(), 3);
     assertTrue(store.remove(sf1));

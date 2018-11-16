@@ -226,7 +226,6 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
   {
     final NCNode<T> newNode = new NCNode<>(entry);
     addNode(newNode);
-    size++;
     return true;
   }
 
@@ -243,6 +242,7 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
   {
     final long start = newNode.getBegin();
     final long end = newNode.getEnd();
+    size += newNode.size();
 
     /*
      * cases:
@@ -274,7 +274,6 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
     boolean enclosing = false;
     int firstEnclosed = 0;
     int lastEnclosed = 0;
-    boolean overlapping = false;
 
     for (int j = candidateIndex; j < subranges.size(); j++)
     {
@@ -289,7 +288,7 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
         return;
       }
 
-      if (end < subrange.getBegin() && !overlapping && !enclosing)
+      if (end < subrange.getBegin() && !enclosing)
       {
         /*
          * new entry lies between subranges j-1 j
@@ -345,10 +344,6 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
           }
           return;
         }
-      }
-      else
-      {
-        overlapping = true;
       }
     }
 
@@ -560,6 +555,15 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
    */
   public boolean isValid()
   {
+    int count = 0;
+    for (NCNode<T> subrange : subranges)
+    {
+      count += subrange.size();
+    }
+    if (count != size)
+    {
+      return false;
+    }
     return isValid(Integer.MIN_VALUE, Integer.MAX_VALUE);
   }
 
@@ -604,16 +608,12 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
           return false;
         }
         if (subrange.properlyContainsInterval(lastRange))
-        // subrange.getBegin() == lastRange.getBegin()
-        // && subrange.getEnd() > lastRange.getEnd())
         {
           System.err.println("error in NCList: range " + subrange.toString()
                   + " encloses preceding: " + lastRange.toString());
           return false;
         }
         if (lastRange.properlyContainsInterval(subrange))
-        // subrange.getBegin() >= lastRange.getBegin()
-        // && subrange.getEnd() <= lastRange.getEnd())
         {
           System.err.println("error in NCList: range " + subrange.toString()
                   + " enclosed by preceding: " + lastRange.toString());
@@ -688,18 +688,35 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
     {
       return false;
     }
-    for (int i = 0; i < subranges.size(); i++)
+    int i = findFirstOverlap(entry.getBegin());
+    if (i == -1)
+    {
+      /*
+       * it's not here!
+       */
+      return false;
+    }
+
+    for (; i < subranges.size(); i++)
     {
       NCNode<T> subrange = subranges.get(i);
+      if (subrange.getBegin() > entry.getBegin())
+      {
+        /*
+         * not found
+         */
+        return false;
+      }
       NCList<T> subRegions = subrange.getSubRegions();
 
       if (subrange.getRegion().equals(entry))
       {
         /*
-         * if the subrange is rooted on this entry, promote its
-         * subregions (if any)  
+         * if the subrange is rooted on this entry, remove it,
+         * and remove and promote its subregions (if any)  
          */
         subranges.remove(i);
+        size -= subrange.size();
         if (subRegions != null)
         {
           for (NCNode<T> r : subRegions.subranges)
@@ -707,15 +724,13 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
             addNode(r);
           }
         }
-        size--;
         return true;
       }
       else
       {
-        if (subRegions != null && subRegions.remove(entry))
+        if (subrange.remove(entry))
         {
           size--;
-          subrange.deleteSubRegionsIfEmpty();
           return true;
         }
       }

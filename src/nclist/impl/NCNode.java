@@ -182,19 +182,15 @@ class NCNode<T extends IntervalI> implements IntervalI
     if (region.getBegin() <= to && region.getEnd() >= from)
     {
       result.add(region);
-    }
-    if (subregions != null)
-    {
-      subregions.findOverlaps(from, to, result);
+      if (subregions != null)
+      {
+        subregions.findOverlaps(from, to, result);
+      }
     }
   }
 
   /**
    * Add one node to this node's subregions.
-   * <p>
-   * This method does not update the <code>size</code> (interval count) of this
-   * NCNode, as it may be used to rearrange nodes without changing their count.
-   * Callers should increment the count if needed.
    * 
    * @param entry
    * @throws IllegalArgumentException
@@ -213,12 +209,20 @@ class NCNode<T extends IntervalI> implements IntervalI
     {
       subregions = new NCList<>();
     }
+
+    /*
+     * increment our size by the size of the added entry;
+     * do this _before_ adding it, since it may acquire new
+     * children if it encloses existing intervals!
+     */
+    size += entry.size();
+
     subregions.addNode(entry);
   }
 
   /**
    * Answers true if the data held satisfy the rules of construction of an
-   * NCList, else false.
+   * NCList, else false
    * 
    * @return
    */
@@ -233,7 +237,18 @@ class NCNode<T extends IntervalI> implements IntervalI
     }
     if (subregions == null)
     {
-      return true;
+      return size == 1;
+    }
+    if (subregions.isEmpty())
+    {
+      /*
+       * we expect empty subregions to be nulled
+       */
+      return false;
+    }
+    if (size != subregions.size() + 1)
+    {
+      return false;
     }
     return subregions.isValid(getBegin(), getEnd());
   }
@@ -293,18 +308,6 @@ class NCNode<T extends IntervalI> implements IntervalI
   }
 
   /**
-   * Nulls the subregion reference if it is empty (after a delete entry
-   * operation)
-   */
-  void deleteSubRegionsIfEmpty()
-  {
-    if (subregions != null && subregions.size() == 0)
-    {
-      subregions = null;
-    }
-  }
-
-  /**
    * Answers the (deep) size of this node i.e. the number of intervals it models
    * 
    * @return
@@ -332,5 +335,38 @@ class NCNode<T extends IntervalI> implements IntervalI
   public Iterator<T> iterator()
   {
     return new NCNodeIterator();
+  }
+
+  /**
+   * Removes the first interval found equal to the given entry. Answers true if
+   * a matching interval is found and removed, else false.
+   * 
+   * @param entry
+   * @return
+   */
+  boolean remove(T entry)
+  {
+    if (region.equals(entry))
+    {
+      /*
+       * this case must be handled by NCList, to allow any
+       * children of a deleted interval to be promoted
+       */
+      throw new IllegalStateException("NCNode can't remove self");
+    }
+    if (subregions == null)
+    {
+      return false;
+    }
+    if (subregions.remove(entry))
+    {
+      size--;
+      if (subregions.isEmpty())
+      {
+        subregions = null;
+      }
+      return true;
+    }
+    return false;
   }
 }

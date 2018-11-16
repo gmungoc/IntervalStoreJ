@@ -405,9 +405,9 @@ public class NCListTest
     for (int i : order)
     {
       ncl.add(ranges.get(i));
+      assertTrue(ncl.isValid(), "iteration " + i);
     }
     assertEquals(ncl.toString(), asString);
-    assertTrue(ncl.isValid());
 
     /*
      * add features one at a time, from 'small' to 'large' 

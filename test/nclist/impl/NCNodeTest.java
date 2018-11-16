@@ -111,8 +111,11 @@ public class NCNodeTest
     Range r3 = new Range(16, 17);
 
     NCNode<Range> node = new NCNode<>(r1);
+    assertTrue(node.isValid());
     node.addNode(new NCNode<>(r2));
+    assertTrue(node.isValid());
     node.addNode(new NCNode<>(r3));
+    assertTrue(node.isValid());
 
     /*
      * node has root range [10-20] and contains an
