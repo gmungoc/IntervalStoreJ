@@ -163,13 +163,6 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
     size = ranges.size();
   }
 
-  public NCList(T entry)
-  {
-    this();
-    subranges.add(new NCNode<>(entry));
-    size = 1;
-  }
-
   public NCList()
   {
     subranges = new ArrayList<>();
@@ -258,14 +251,6 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
      * find the first subrange whose end does not precede entry's start
      */
     int candidateIndex = findFirstOverlap(start);
-    if (candidateIndex == -1)
-    {
-      /*
-       * all subranges precede this one - add it on the end
-       */
-      subranges.add(newNode);
-      return;
-    }
 
     /*
      * search for maximal span of subranges i-k that the new entry
@@ -376,11 +361,6 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
      */
     int candidateIndex = findFirstOverlap(interval.getBegin());
 
-    if (candidateIndex == -1)
-    {
-      return false;
-    }
-
     int to = interval.getEnd();
 
     for (int i = candidateIndex; i < subranges.size(); i++)
@@ -465,10 +445,10 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
      */
     int candidateIndex = findFirstOverlap(from);
 
-    if (candidateIndex == -1)
-    {
-      return;
-    }
+    // if (candidateIndex == -1)
+    // {
+    // return;
+    // }
 
     for (int i = candidateIndex; i < subranges.size(); i++)
     {
@@ -489,7 +469,7 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
    * Search subranges for the first one whose end position is not before the
    * target range's start position, i.e. the first one that may overlap the
    * target range. Returns the index in the list of the first such range found,
-   * or -1 if none found.
+   * or the length of the list if none found.
    * 
    * @param from
    * @return
@@ -631,16 +611,6 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
   }
 
   /**
-   * Answers the lowest start position enclosed by the ranges
-   * 
-   * @return
-   */
-  public int getStart()
-  {
-    return subranges.isEmpty() ? 0 : subranges.get(0).getBegin();
-  }
-
-  /**
    * Answers the number of intervals stored
    * 
    * @return
@@ -689,13 +659,13 @@ public class NCList<T extends IntervalI> extends AbstractCollection<T>
       return false;
     }
     int i = findFirstOverlap(entry.getBegin());
-    if (i == -1)
-    {
-      /*
-       * it's not here!
-       */
-      return false;
-    }
+    // if (i == -1)
+    // {
+    // /*
+    // * it's not here!
+    // */
+    // return false;
+    // }
 
     for (; i < subranges.size(); i++)
     {

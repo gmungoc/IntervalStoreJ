@@ -75,11 +75,6 @@ class NCNode<T extends IntervalI> implements IntervalI
     }
   }
 
-  /*
-   * deep size (number of ranges included)
-   */
-  private int size;
-
   private T region;
 
   /*
@@ -94,8 +89,6 @@ class NCNode<T extends IntervalI> implements IntervalI
    */
   NCNode(List<T> ranges)
   {
-    size = ranges.size();
-    
     if (!ranges.isEmpty())
     {
       region = ranges.get(0);
@@ -113,14 +106,7 @@ class NCNode<T extends IntervalI> implements IntervalI
    */
   NCNode(T range)
   {
-    size = 1;
     region = range;
-  }
-
-  void setSubtree(NCList<T> newNCList)
-  {
-    subregions = newNCList;
-    size = 1 + newNCList.size();
   }
 
   @Override
@@ -147,7 +133,7 @@ class NCNode<T extends IntervalI> implements IntervalI
   @Override
   public String toString()
   {
-    StringBuilder sb = new StringBuilder(10 * size);
+    StringBuilder sb = new StringBuilder(10 * size());
     sb.append(region.toString());
     if (subregions != null)
     {
@@ -210,13 +196,6 @@ class NCNode<T extends IntervalI> implements IntervalI
       subregions = new NCList<>();
     }
 
-    /*
-     * increment our size by the size of the added entry;
-     * do this _before_ adding it, since it may acquire new
-     * children if it encloses existing intervals!
-     */
-    size += entry.size();
-
     subregions.addNode(entry);
   }
 
@@ -237,17 +216,13 @@ class NCNode<T extends IntervalI> implements IntervalI
     }
     if (subregions == null)
     {
-      return size == 1;
+      return true;
     }
     if (subregions.isEmpty())
     {
       /*
        * we expect empty subregions to be nulled
        */
-      return false;
-    }
-    if (size != subregions.size() + 1)
-    {
       return false;
     }
     return subregions.isValid(getBegin(), getEnd());
@@ -314,7 +289,7 @@ class NCNode<T extends IntervalI> implements IntervalI
    */
   int size()
   {
-    return size;
+    return subregions == null ? 1 : 1 + subregions.size();
   }
 
   /**
@@ -352,7 +327,7 @@ class NCNode<T extends IntervalI> implements IntervalI
        * this case must be handled by NCList, to allow any
        * children of a deleted interval to be promoted
        */
-      throw new IllegalStateException("NCNode can't remove self");
+      throw new IllegalArgumentException("NCNode can't remove self");
     }
     if (subregions == null)
     {
@@ -360,7 +335,6 @@ class NCNode<T extends IntervalI> implements IntervalI
     }
     if (subregions.remove(entry))
     {
-      size--;
       if (subregions.isEmpty())
       {
         subregions = null;

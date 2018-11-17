@@ -270,7 +270,7 @@ public class IntervalStore<T extends IntervalI>
   {
     if (nested == null)
     {
-      nested = new NCList<T>();
+      nested = new NCList<>();
     }
     nested.add(interval);
   }
@@ -326,7 +326,7 @@ public class IntervalStore<T extends IntervalI>
   @Override
   public Iterator<T> iterator()
   {
-    return new IntervalIterator<T>(this);
+    return new IntervalIterator<>(this);
   }
 
   @Override

@@ -5,11 +5,13 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.testng.annotations.Test;
 
@@ -121,7 +123,6 @@ public class NCListTest
     NCList<Range> ncl = new NCList<>(ranges);
     assertEquals(ncl.toString(), "[20-50, 30-60]");
     assertTrue(ncl.isValid());
-    assertEquals(ncl.getStart(), 20);
 
     ncl.add(new Range(10, 70));
     assertEquals(ncl.toString(), "[10-70 [20-50, 30-60]]");
@@ -263,6 +264,10 @@ public class NCListTest
   public void testContains()
   {
     NCList<SimpleFeature> ncl = new NCList<>();
+
+    assertFalse(ncl.contains(null));
+    assertFalse(ncl.contains("xyz"));
+
     SimpleFeature sf1 = new SimpleFeature(1, 10, "type");
     SimpleFeature sf2 = new SimpleFeature(1, 10, "type");
     SimpleFeature sf3 = new SimpleFeature(1, 10, "type2");
@@ -309,9 +314,15 @@ public class NCListTest
     assertTrue(ncl.isValid());
 
     /*
-     * use PrivilegedAccessor to force invalid values into ranges, as
+     * use PrivilegedAccessor to force invalid values, as
      * the public API should not allow construction of an invalid NCList
      */
+    int size = ncl.size();
+    PA.setValue(ncl, "size", size + 1);
+    assertFalse(ncl.isValid());
+    PA.setValue(ncl, "size", size);
+    assertTrue(ncl.isValid());
+
     PA.setValue(r1, "start", 43);
     assertFalse(ncl.isValid()); // r2 not inside r1
     PA.setValue(r1, "start", 40);
@@ -635,6 +646,7 @@ public class NCListTest
     Range r3 = new Range(10, 30);
     Range r4 = new Range(30, 50);
     ncl.add(r1);
+    assertTrue(ncl.iterator().hasNext());
     ncl.add(r2);
     ncl.add(r3);
     ncl.add(r4);
@@ -646,6 +658,14 @@ public class NCListTest
     assertSame(it.next(), r2);
     assertSame(it.next(), r4);
     assertFalse(it.hasNext());
+    try
+    {
+      it.next();
+      fail("expected exception");
+    } catch (NoSuchElementException e)
+    {
+      // expected
+    }
   }
 
   @Test(groups = "Functional")
@@ -664,6 +684,9 @@ public class NCListTest
 
     int j = ncl.findFirstOverlap(35);
     assertEquals(j, 0, "findFirstOverlap for " + 35);
+
+    j = ncl.findFirstOverlap(80);
+    assertEquals(j, 2, "findFirstOverlap for " + 80);
   }
 
   /**

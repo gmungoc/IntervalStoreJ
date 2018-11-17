@@ -248,6 +248,8 @@ public class IntervalStoreTest
   {
     IntervalStore<SimpleFeature> store = new IntervalStore<>();
 
+    assertFalse(store.add(null));
+
     SimpleFeature sf1 = new SimpleFeature(10, 20, "Cath");
     SimpleFeature sf2 = new SimpleFeature(10, 20, "Cath");
 

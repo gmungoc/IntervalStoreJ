@@ -2,7 +2,9 @@ package nclist.impl;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -132,5 +134,36 @@ public class NCNodeTest
     assertTrue(node.isValid());
     PA.setValue(r3, "start", 12);
     assertFalse(node.isValid()); // r3 should precede r2
+  }
+
+  @Test(groups = "Functional")
+  public void testRemove()
+  {
+    Range r1 = new Range(10, 20);
+    Range r2 = new Range(14, 15);
+    Range r3 = new Range(16, 17);
+
+    NCNode<Range> node = new NCNode<>(r1);
+    node.addNode(new NCNode<>(r2));
+    node.addNode(new NCNode<>(r3));
+
+    assertFalse(node.remove(null));
+    assertFalse(node.remove(new Range(10, 21))); // no match
+    try
+    {
+      node.remove(r1); // can't remove root node
+      fail("expected exception");
+    } catch (IllegalArgumentException e)
+    {
+      // expected
+    }
+    assertEquals(node.toString(), "10-20 [14-15, 16-17]");
+    assertTrue(node.remove(new Range(14, 15)));
+    assertEquals(node.toString(), "10-20 [16-17]");
+    assertTrue(node.remove(new Range(16, 17)));
+    assertEquals(node.toString(), "10-20");
+
+    // enclosed NCList is nulled when empty
+    assertNull(node.getSubRegions());
   }
 }
